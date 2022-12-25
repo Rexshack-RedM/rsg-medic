@@ -79,7 +79,7 @@ function deathTimer()
     end)
 end
 
--- resouces
+-- drawtext for countdown
 function DrawTxt(str, x, y, w, h, enableShadow, col1, col2, col3, a, centre)
     local str = CreateVarString(10, "LITERAL_STRING", str)
     SetTextScale(w, h)
@@ -88,5 +88,46 @@ function DrawTxt(str, x, y, w, h, enableShadow, col1, col2, col3, a, centre)
     if enableShadow then SetTextDropshadow(1, 0, 0, 0, 255) end
     DisplayText(str, x, y)
 end
+
+-- health update
+CreateThread(function()
+    local lastHealth = nil
+    while true do
+        if LocalPlayer.state.isLoggedIn and not LocalPlayer.state.skinLoading then 
+            local ped = PlayerPedId()
+            local health = GetEntityHealth(ped)
+            if lastHealth ~= health then
+				print(health)
+                TriggerServerEvent('rsg-medic:server:SetHealth', health)
+            end
+            lastHealth = health
+            Wait(1000)
+        else
+            Wait(5000)
+        end
+    end
+end)
+
+------------------------------------------------------------------------------------------------------------------------
+
+RegisterNetEvent('rsg-medic:clent:adminRevive', function()
+	local player = PlayerPedId()
+	DoScreenFadeOut(500)
+	Wait(1000)
+	local pos = GetEntityCoords(player, true)
+	NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
+	SetEntityInvincible(player, false)
+	Wait(1500)
+	DoScreenFadeIn(1800)
+	Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
+	Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
+	Citizen.InvokeNative(0xC6258F41D86676E0, player, 2, 100) -- SetAttributeCoreValue
+	TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
+	TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
+	ClearPedBloodDamage(player)
+	SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
+	RemoveAllPedWeapons(player, true, true)
+	deathactive = false
+end)
 
 ------------------------------------------------------------------------------------------------------------------------

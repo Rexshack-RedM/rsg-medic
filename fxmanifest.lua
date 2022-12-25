@@ -5,16 +5,18 @@ game 'rdr3'
 description 'rsg-medic'
 
 client_scripts {
-	'client/client.lua',
+    'client/client.lua',
 }
 
 server_scripts {
-	'server/server.lua',
-	'@oxmysql/lib/MySQL.lua',
+    'server/server.lua',
+    '@oxmysql/lib/MySQL.lua',
 }
 
 shared_scripts {
-	'config.lua'
+    '@rsg-core/shared/locale.lua',
+    'locale/en.lua',
+    'config.lua',
 }
 
 lua54 'yes'
