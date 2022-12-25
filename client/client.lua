@@ -2,6 +2,96 @@ local RSGCore = exports['rsg-core']:GetCoreObject()
 local deathSecondsRemaining = 0
 local deathTimerStarted = false
 local deathactive = false
+local mediclocation
+
+-----------------------------------------------------------------------------------
+
+-- prompts and blips
+CreateThread(function()
+    for medic, v in pairs(Config.MedicJobLocations) do
+        exports['rsg-core']:createPrompt(v.prompt, v.coords, RSGCore.Shared.Keybinds['J'], 'Open ' .. v.name, {
+            type = 'client',
+            event = 'rsg-medic:client:mainmenu',
+            args = { v.prompt },
+        })
+        if v.showblip == true then
+            local MedicBlip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, v.coords)
+            SetBlipSprite(MedicBlip, GetHashKey(Config.Blip.blipSprite), true)
+            SetBlipScale(MedicBlip, Config.Blip.blipScale)
+            Citizen.InvokeNative(0x9CB1A1623062F402, MedicBlip, Config.Blip.blipName)
+        end
+    end
+end)
+
+-- draw marker if set to true in config
+CreateThread(function()
+    while true do
+        local sleep = 0
+        if LocalPlayer.state.isLoggedIn then
+            local job = RSGCore.Functions.GetPlayerData().job.name
+            if job == Config.JobRequired then
+                for medic, v in pairs(Config.MedicJobLocations) do
+                    if v.showmarker == true then
+                        Citizen.InvokeNative(0x2A32FAA57B937173, 0x07DCE236, v.coords, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 255, 215, 0, 155, false, false, false, 1, false, false, false)
+                    end
+                end
+            end
+        end
+        Wait(sleep)
+    end
+end)
+
+-- weaponsmith menu
+RegisterNetEvent('rsg-medic:client:mainmenu', function(location)
+    local job = RSGCore.Functions.GetPlayerData().job.name
+    if job == Config.JobRequired then
+        mediclocation = location
+        exports['rsg-menu']:openMenu({
+            {
+                header = 'Medic Menu',
+                isMenuHeader = true,
+            },
+            {
+                header = "Medical Supplies",
+                txt = "",
+                icon = "fas fa-heartbeat",
+                params = {
+                    event = 'rsg-medic:clent:OpenMedicSupplies',
+                    isServer = false,
+                }
+            },
+            {
+                header = "Medic Storage",
+                txt = "",
+                icon = "fas fa-box",
+                params = {
+                    event = 'rsg-medic:clent:storage',
+                    isServer = false,
+                    args = {},
+                }
+            },
+            {
+                header = "Job Management",
+                txt = "",
+                icon = "fas fa-user-circle",
+                params = {
+                    event = 'rsg-bossmenu:client:OpenMenu',
+                    isServer = false,
+                    args = {},
+                }
+            },
+            {
+                header = ">> Close Menu <<",
+                txt = '',
+                params = {
+                    event = 'rsg-menu:closeMenu',
+                }
+            },
+        })
+    else
+        RSGCore.Functions.Notify('you are not a Medic!', 'error')
+    end
+end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -37,7 +127,7 @@ CreateThread(function()
         if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
             deathTimerStarted = false
             TriggerEvent('rsg-medic:clent:revive')
-            TriggerServerEvent('rsg-medic::server:deathactions')
+            TriggerServerEvent('rsg-medic:server:deathactions')
         end
     end
 end)
@@ -97,7 +187,6 @@ CreateThread(function()
             local ped = PlayerPedId()
             local health = GetEntityHealth(ped)
             if lastHealth ~= health then
-				print(health)
                 TriggerServerEvent('rsg-medic:server:SetHealth', health)
             end
             lastHealth = health
@@ -110,6 +199,7 @@ end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
+-- admin revive
 RegisterNetEvent('rsg-medic:clent:adminRevive', function()
 	local player = PlayerPedId()
 	DoScreenFadeOut(500)
@@ -128,6 +218,31 @@ RegisterNetEvent('rsg-medic:clent:adminRevive', function()
 	SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
 	RemoveAllPedWeapons(player, true, true)
 	deathactive = false
+end)
+
+------------------------------------------------------------------------------------------------------------------------
+
+-- medic supplies
+RegisterNetEvent('rsg-medic:clent:OpenMedicSupplies')
+AddEventHandler('rsg-medic:clent:OpenMedicSupplies', function()
+    local ShopItems = {}
+    ShopItems.label = "Medic Supplies"
+    ShopItems.items = Config.MedicSupplies
+    ShopItems.slots = #Config.MedicSupplies
+    TriggerServerEvent("inventory:server:OpenInventory", "shop", "MedicSupplies_"..math.random(1, 99), ShopItems)
+end)
+
+-- medic storage
+RegisterNetEvent('rsg-medic:clent:storage', function()
+    local job = RSGCore.Functions.GetPlayerData().job.name
+    local stashloc = mediclocation
+    if job == Config.JobRequired then
+        TriggerServerEvent("inventory:server:OpenInventory", "stash", stashloc, {
+            maxweight = Config.StorageMaxWeight,
+            slots = Config.StorageMaxSlots,
+        })
+        TriggerEvent("inventory:client:SetCurrentStash", stashloc)
+    end
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
