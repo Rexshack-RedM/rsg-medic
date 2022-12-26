@@ -3,6 +3,7 @@ local deathSecondsRemaining = 0
 local deathTimerStarted = false
 local deathactive = false
 local mediclocation
+local medicsonduty = 0
 
 -----------------------------------------------------------------------------------
 
@@ -50,6 +51,15 @@ RegisterNetEvent('rsg-medic:client:mainmenu', function(location)
             {
                 header = 'Medic Menu',
                 isMenuHeader = true,
+            },
+            {
+                header = "Toggle Duty",
+                txt = "",
+                icon = "fas fa-user-circle",
+                params = {
+                    event = 'rsg-medic:clent:ToggleDuty',
+                    isServer = false,
+                }
             },
             {
                 header = "Medical Supplies",
@@ -113,6 +123,16 @@ CreateThread(function()
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
+-- get medics on-duty
+CreateThread(function()
+    while true do
+        Wait(1000)
+        RSGCore.Functions.TriggerCallback('rsg-medic:server:getmedics', function(mediccount)
+            medicsonduty = mediccount
+            print(medicsonduty)
+        end)
+    end
+end)
 
 -- display respawn message and countdown
 CreateThread(function()
@@ -121,13 +141,23 @@ CreateThread(function()
         if deathTimerStarted == true and deathSecondsRemaining > 0 then
             DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
         end
-        if deathTimerStarted == true and deathSecondsRemaining == 0 then
+        if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty == 0 then
             DrawTxt('PRESS [E] TO RESPAWN', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
+        end
+        if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty > 0 then
+            DrawTxt('PRESS [E] TO RESPAWN - PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
         end
         if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
             deathTimerStarted = false
             TriggerEvent('rsg-medic:clent:revive')
             TriggerServerEvent('rsg-medic:server:deathactions')
+        end
+        if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['J'] and medicsonduty > 0) then
+            deathTimerStarted = false
+            local player = PlayerPedId()
+            coords = GetEntityCoords(player, true)
+            TriggerEvent('rsg-medic:client:medicAlert', coords, 'player needs help!')
+            RSGCore.Functions.Notify('medic has been called', 'primary')
         end
     end
 end)
