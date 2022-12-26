@@ -4,6 +4,7 @@ local deathTimerStarted = false
 local deathactive = false
 local mediclocation
 local medicsonduty = 0
+local healthset = false
 
 -----------------------------------------------------------------------------------
 
@@ -177,8 +178,8 @@ RegisterNetEvent('rsg-medic:clent:revive', function()
         Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
         Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
         Citizen.InvokeNative(0xC6258F41D86676E0, player, 2, 100) -- SetAttributeCoreValue
-        TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
-        TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
+        TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
+        TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
         ClearPedBloodDamage(player)
         SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
         RemoveAllPedWeapons(player, true, true)
@@ -209,15 +210,35 @@ function DrawTxt(str, x, y, w, h, enableShadow, col1, col2, col3, a, centre)
     DisplayText(str, x, y)
 end
 
--- health update
+------------------------------------------------------------------------------------------------------------------------
+
+-- setup stored health on restart
+RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
+    print('Im a client and i just loaded into your server!')
+	local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, PlayerPedId(), 0)
+	local savedhealth = RSGCore.Functions.GetPlayerData().metadata["health"]
+	while true do
+		Wait(1000)
+		if healthset == false then
+			if healthcore < savedhealth then
+				Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100) -- SetAttributeCoreValue
+				SetEntityHealth(PlayerPedId(), savedhealth, 0)
+				healthset = true
+			else
+				Wait(1000)
+			end
+		end
+	end
+end)
+
+-- health update loop
 CreateThread(function()
-    local lastHealth = nil
     while true do
-        if LocalPlayer.state.isLoggedIn and not LocalPlayer.state.skinLoading then 
-            local ped = PlayerPedId()
-            local health = GetEntityHealth(ped)
+        if healthset == true then
+            local health = GetEntityHealth(PlayerPedId())
             if lastHealth ~= health then
                 TriggerServerEvent('rsg-medic:server:SetHealth', health)
+				print(health)
             end
             lastHealth = health
             Wait(1000)

@@ -7,7 +7,7 @@ Config.StorageMaxSlots = 48
 Config.DeathTimer = 60 -- 300 = 5 mins / testing 60 = 1 min
 Config.WipeInventoryOnRespawn = true
 Config.WipeCashOnRespawn = true
-Config.MaxHealth = 300
+Config.MaxHealth = 600
 Config.MedicReviveTime = 5000
 
 -- blip settings
