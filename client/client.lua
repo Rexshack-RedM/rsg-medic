@@ -129,7 +129,6 @@ CreateThread(function()
         Wait(1000)
         RSGCore.Functions.TriggerCallback('rsg-medic:server:getmedics', function(mediccount)
             medicsonduty = mediccount
-            print(medicsonduty)
         end)
     end
 end)

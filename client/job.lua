@@ -25,12 +25,6 @@ RegisterNetEvent('rsg-medic:clent:ToggleDuty', function()
     end)
 end)
 
-RegisterNetEvent('RSGCore:Client:OnJobUpdate', function(JobInfo)
-    print(JobInfo)
-    PlayerJob = JobInfo
-    TriggerServerEvent("rsg-medic:server:SetMedic")
-end)
-
 -----------------------------------------------------------------------------------
 
 -- get closest player

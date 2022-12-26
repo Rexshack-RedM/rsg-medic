@@ -65,18 +65,6 @@ end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
--- set medics on duty
-RegisterNetEvent('rsg-medic:server:SetMedic', function()
-    local amount = 0
-    local players = RSGCore.Functions.GetRSGPlayers()
-    for k,v in pairs(players) do
-        if v.PlayerData.job.name == Config.JobRequired and v.PlayerData.job.onduty then
-            amount = amount + 1
-        end
-    end
-    TriggerClientEvent("hospital:client:SetMedicCount", -1, amount)
-end)
-
 -- medics on duty callback
 RSGCore.Functions.CreateCallback('rsg-medic:server:getmedics', function(source, cb)
     local amount = 0
