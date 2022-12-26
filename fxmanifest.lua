@@ -6,6 +6,7 @@ description 'rsg-medic'
 
 client_scripts {
     'client/client.lua',
+	'client/job.lua',
 }
 
 server_scripts {

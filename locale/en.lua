@@ -1,6 +1,8 @@
 local Translations = {
     error = {
         not_online = 'Player Not Online',
+		no_player = 'No Player Nearby',
+		no_firstaid = 'You need a First Aid Kit',
     },
     success = {
         revived = 'You revived a person',

@@ -8,6 +8,7 @@ Config.DeathTimer = 60 -- 300 = 5 mins / testing 60 = 1 min
 Config.WipeInventoryOnRespawn = true
 Config.WipeCashOnRespawn = true
 Config.MaxHealth = 300
+Config.MedicReviveTime = 5000
 
 -- blip settings
 Config.Blip = {
@@ -24,4 +25,5 @@ Config.MedicJobLocations = {
 -- medic supplies items
 Config.MedicSupplies = {
     [1] = { name = "bandage", price = 0, amount = 500, info = {}, type = "item", slot = 1, },
+    [2] = { name = "firstaid", price = 0, amount = 500, info = {}, type = "item", slot = 2, },
 }
