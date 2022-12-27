@@ -78,6 +78,68 @@ RegisterNetEvent('rsg-medic:client:RevivePlayer', function()
     end
 end)
 
+-- medic treat wounds
+RegisterNetEvent('rsg-medic:client:TreatWounds', function()
+    local hasItem = RSGCore.Functions.HasItem('bandage', 1)
+    if hasItem then
+        local player, distance = GetClosestPlayer()
+        if player ~= -1 and distance < 5.0 then
+            local playerId = GetPlayerServerId(player)
+            isHealingPerson = true
+            local dict = loadAnimDict('script_re@gold_panner@gold_success')
+            TaskPlayAnim(PlayerPedId(), dict, 'SEARCH01', 8.0, 8.0, -1, 1, false, false, false)
+            FreezeEntityPosition(PlayerPedId(), true)
+            RSGCore.Functions.Progressbar("treating", "Treast Wounds...", Config.MedicTreatTime, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {}, {}, {}, function()
+                ClearPedTasks(PlayerPedId())
+                TriggerServerEvent('rsg-medic:server:TreatWounds', playerId)
+                FreezeEntityPosition(PlayerPedId(), false)
+                isHealingPerson = false
+            end)
+        else
+			RSGCore.Functions.Notify(Lang:t('error.no_player'), 'error')
+        end
+    else
+		RSGCore.Functions.Notify(Lang:t('error.no_bandage'), 'error')
+    end
+end)
+
+-----------------------------------------------------------------------------------
+
+-- admin/medic revive
+RegisterNetEvent('rsg-medic:clent:playerRevive', function()
+    local player = PlayerPedId()
+    DoScreenFadeOut(500)
+    Wait(1000)
+    local pos = GetEntityCoords(player, true)
+    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
+    SetEntityInvincible(player, false)
+    Wait(1500)
+    DoScreenFadeIn(1800)
+    Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
+    Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
+    ClearPedBloodDamage(player)
+    SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
+    RemoveAllPedWeapons(player, true, true)
+    deathactive = false
+end)
+
+-- medic treat wounds
+RegisterNetEvent('rsg-medic:client:HealInjuries', function()
+    local player = PlayerPedId()
+    Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
+    Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
+    ClearPedBloodDamage(player)
+end)
+
 -----------------------------------------------------------------------------------
 
 -- medic alert

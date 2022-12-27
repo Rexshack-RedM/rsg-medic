@@ -3,6 +3,7 @@ local Translations = {
         not_online = 'Player Not Online',
         no_player = 'No Player Nearby',
         no_firstaid = 'You need a First Aid Kit',
+        no_bandage = 'You need a Bandage',
         not_medic = 'You are not a medic',
     },
     success = {

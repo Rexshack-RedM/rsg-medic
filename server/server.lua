@@ -52,14 +52,35 @@ end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
+-- medic revive player
 RegisterNetEvent('rsg-medic:server:RevivePlayer', function(playerId)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     local Patient = RSGCore.Functions.GetPlayer(playerId)
     if Patient then
-        Player.Functions.RemoveItem('firstaid', 1)
-        TriggerClientEvent('inventory:client:ItemBox', src, RSGCore.Shared.Items['firstaid'], "remove")
-        TriggerClientEvent('rsg-medic:clent:playerRevive', Patient.PlayerData.source)
+        if Player.PlayerData.job.name == Config.JobRequired then
+            Player.Functions.RemoveItem('firstaid', 1)
+            TriggerClientEvent('inventory:client:ItemBox', src, RSGCore.Shared.Items['firstaid'], "remove")
+            TriggerClientEvent('rsg-medic:clent:playerRevive', Patient.PlayerData.source)
+        else
+            TriggerClientEvent('RSGCore:Notify', src, Lang:t('error.not_medic'), 'error')
+        end
+    end
+end)
+
+-- medic treat wounds
+RegisterNetEvent('rsg-medic:server:TreatWounds', function(playerId)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    local Patient = RSGCore.Functions.GetPlayer(playerId)
+    if Patient then
+        if Player.PlayerData.job.name == Config.JobRequired then
+            Player.Functions.RemoveItem('bandage', 1)
+            TriggerClientEvent('inventory:client:ItemBox', src, RSGCore.Shared.Items['bandage'], "remove")
+            TriggerClientEvent('rsg-medic:client:HealInjuries', Patient.PlayerData.source, "full")
+        else
+            TriggerClientEvent('RSGCore:Notify', src, Lang:t('error.not_medic'), 'error')
+        end
     end
 end)
 

@@ -9,6 +9,7 @@ Config.WipeInventoryOnRespawn = false
 Config.WipeCashOnRespawn = false
 Config.MaxHealth = 600
 Config.MedicReviveTime = 5000
+Config.MedicTreatTime = 5000
 
 -- blip settings
 Config.Blip = {
