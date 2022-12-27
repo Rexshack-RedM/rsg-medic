@@ -4,9 +4,9 @@ Config = {}
 Config.JobRequired = 'medic'
 Config.StorageMaxWeight = 4000000
 Config.StorageMaxSlots = 48
-Config.DeathTimer = 60 -- 300 = 5 mins / testing 60 = 1 min
-Config.WipeInventoryOnRespawn = true
-Config.WipeCashOnRespawn = true
+Config.DeathTimer = 300 -- 300 = 5 mins / testing 60 = 1 min
+Config.WipeInventoryOnRespawn = false
+Config.WipeCashOnRespawn = false
 Config.MaxHealth = 600
 Config.MedicReviveTime = 5000
 

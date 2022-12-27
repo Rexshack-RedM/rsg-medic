@@ -138,26 +138,28 @@ end)
 CreateThread(function()
     while true do
         Wait(0)
-        if deathTimerStarted == true and deathSecondsRemaining > 0 then
-            DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-        end
-        if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty == 0 then
-            DrawTxt('PRESS [E] TO RESPAWN', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-        end
-        if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty > 0 then
-            DrawTxt('PRESS [E] TO RESPAWN - PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-        end
-        if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
-            deathTimerStarted = false
-            TriggerEvent('rsg-medic:clent:revive')
-            TriggerServerEvent('rsg-medic:server:deathactions')
-        end
-        if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['J'] and medicsonduty > 0) then
-            deathTimerStarted = false
-            local player = PlayerPedId()
-            coords = GetEntityCoords(player, true)
-            TriggerEvent('rsg-medic:client:medicAlert', coords, 'player needs help!')
-            RSGCore.Functions.Notify('medic has been called', 'primary')
+        if deathactive == true then
+            if deathTimerStarted == true and deathSecondsRemaining > 0 then
+                DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
+            end
+            if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty == 0 then
+                DrawTxt('PRESS [E] TO RESPAWN', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
+            end
+            if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty > 0 then
+                DrawTxt('PRESS [E] TO RESPAWN - PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
+            end
+            if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
+                deathTimerStarted = false
+                TriggerEvent('rsg-medic:clent:revive')
+                TriggerServerEvent('rsg-medic:server:deathactions')
+            end
+            if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['J'] and medicsonduty > 0) then
+                deathTimerStarted = false
+                local player = PlayerPedId()
+                coords = GetEntityCoords(player, true)
+                TriggerEvent('rsg-medic:client:medicAlert', coords, 'player needs help!')
+                RSGCore.Functions.Notify('medic has been called', 'primary')
+            end
         end
     end
 end)
@@ -183,7 +185,10 @@ RegisterNetEvent('rsg-medic:clent:revive', function()
         ClearPedBloodDamage(player)
         SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
         RemoveAllPedWeapons(player, true, true)
+        -- reset death timer
         deathactive = false
+        deathTimerStarted = false
+        deathSecondsRemaining = 0
     end
 end)
 
@@ -214,21 +219,21 @@ end
 
 -- setup stored health on restart
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
-    print('Im a client and i just loaded into your server!')
-	local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, PlayerPedId(), 0)
-	local savedhealth = RSGCore.Functions.GetPlayerData().metadata["health"]
-	while true do
-		Wait(1000)
-		if healthset == false then
-			if healthcore < savedhealth then
-				Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100) -- SetAttributeCoreValue
-				SetEntityHealth(PlayerPedId(), savedhealth, 0)
-				healthset = true
-			else
-				Wait(1000)
-			end
-		end
-	end
+    print('player health adjusted')
+    local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, PlayerPedId(), 0)
+    local savedhealth = RSGCore.Functions.GetPlayerData().metadata["health"]
+    while true do
+        Wait(1000)
+        if healthset == false then
+            if healthcore < savedhealth then
+                Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100) -- SetAttributeCoreValue
+                SetEntityHealth(PlayerPedId(), savedhealth, 0)
+                healthset = true
+            else
+                Wait(1000)
+            end
+        end
+    end
 end)
 
 -- health update loop
@@ -238,7 +243,6 @@ CreateThread(function()
             local health = GetEntityHealth(PlayerPedId())
             if lastHealth ~= health then
                 TriggerServerEvent('rsg-medic:server:SetHealth', health)
-				print(health)
             end
             lastHealth = health
             Wait(1000)

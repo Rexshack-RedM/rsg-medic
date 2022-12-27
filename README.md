@@ -13,4 +13,4 @@
 - add the following to your server.cfg file : ensure rsg-medic
 
 # Commands Use
-- NIL
+- /revive <player id> (Admin Only)
