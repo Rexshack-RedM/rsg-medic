@@ -25,24 +25,6 @@ CreateThread(function()
     end
 end)
 
--- draw marker if set to true in config
-CreateThread(function()
-    while true do
-        local sleep = 0
-        if LocalPlayer.state.isLoggedIn then
-            local job = RSGCore.Functions.GetPlayerData().job.name
-            if job == Config.JobRequired then
-                for medic, v in pairs(Config.MedicJobLocations) do
-                    if v.showmarker == true then
-                        Citizen.InvokeNative(0x2A32FAA57B937173, 0x07DCE236, v.coords, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 255, 215, 0, 155, false, false, false, 1, false, false, false)
-                    end
-                end
-            end
-        end
-        Wait(sleep)
-    end
-end)
-
 -- medic menu
 RegisterNetEvent('rsg-medic:client:mainmenu', function(location)
     local job = RSGCore.Functions.GetPlayerData().job.name
@@ -109,7 +91,7 @@ end)
 -- register death
 CreateThread(function()
     while true do
-        Wait(0)
+        Wait(1000)
         local player = PlayerId()
         if NetworkIsPlayerActive(player) then
             local playerPed = PlayerPedId()
