@@ -201,6 +201,56 @@ end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
+-- admin revive
+RegisterNetEvent('rsg-medic:clent:adminRevive', function()
+    local player = PlayerPedId()
+    DoScreenFadeOut(500)
+    Wait(1000)
+    local pos = GetEntityCoords(player, true)
+    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
+    SetEntityInvincible(player, false)
+	ClearPedBloodDamage(player)
+    Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
+    Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
+    SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
+    RemoveAllPedWeapons(player, true, true)
+	-- reset death timer
+	deathactive = false
+	deathTimerStarted = false
+	deathSecondsRemaining = 0
+	Wait(1500)
+	DoScreenFadeIn(1800)
+end)
+
+------------------------------------------------------------------------------------------------------------------------
+
+-- player revive
+RegisterNetEvent('rsg-medic:clent:playerRevive', function()
+    local player = PlayerPedId()
+    DoScreenFadeOut(500)
+    Wait(1000)
+    local pos = GetEntityCoords(player, true)
+    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
+    SetEntityInvincible(player, false)
+	ClearPedBloodDamage(player)
+    Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
+    Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
+    SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
+    RemoveAllPedWeapons(player, true, true)
+	-- reset death timer
+	deathactive = false
+	deathTimerStarted = false
+	deathSecondsRemaining = 0
+	Wait(1500)
+	DoScreenFadeIn(1800)
+end)
+
+------------------------------------------------------------------------------------------------------------------------
+
 -- death timer
 function deathTimer()
     deathSecondsRemaining = Config.DeathTimer

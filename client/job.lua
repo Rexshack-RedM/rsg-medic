@@ -110,26 +110,6 @@ end)
 
 -----------------------------------------------------------------------------------
 
--- admin/medic revive
-RegisterNetEvent('rsg-medic:clent:playerRevive', function()
-    local player = PlayerPedId()
-    DoScreenFadeOut(500)
-    Wait(1000)
-    local pos = GetEntityCoords(player, true)
-    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
-    SetEntityInvincible(player, false)
-    Wait(1500)
-    DoScreenFadeIn(1800)
-    Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
-    Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
-    ClearPedBloodDamage(player)
-    SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
-    RemoveAllPedWeapons(player, true, true)
-    deathactive = false
-end)
-
 -- medic treat wounds
 RegisterNetEvent('rsg-medic:client:HealInjuries', function()
     local player = PlayerPedId()
