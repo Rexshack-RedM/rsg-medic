@@ -5,6 +5,7 @@ local deathactive = false
 local mediclocation
 local medicsonduty = 0
 local healthset = false
+local closestRespawn = nil
 
 -----------------------------------------------------------------------------------
 
@@ -148,29 +149,53 @@ end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
+-- set closest respawn
+local function SetClosestRespawn()
+    local pos = GetEntityCoords(PlayerPedId(), true)
+    local current = nil
+    local dist = nil
+    for k, v in pairs(Config.RespawnLocations) do
+        local dist2 = #(pos - vector3(Config.RespawnLocations[k].coords.x, Config.RespawnLocations[k].coords.y, Config.RespawnLocations[k].coords.z))
+        if current then
+            if dist2 < dist then
+                current = k
+                dist = dist2
+            end
+        else
+            dist = dist2
+            current = k
+        end
+    end
+    if current ~= closestRespawn then
+        closestRespawn = current
+    end
+end
+
+------------------------------------------------------------------------------------------------------------------------
+
 -- player revive after pressing [E]
 RegisterNetEvent('rsg-medic:clent:revive', function()
+    SetClosestRespawn()
     local player = PlayerPedId()
     if deathactive == true then
         DoScreenFadeOut(500)
         Wait(1000)
-        local pos = GetEntityCoords(player, true)
-        NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
+        local respawnPos = Config.RespawnLocations[closestRespawn].coords
+        NetworkResurrectLocalPlayer(respawnPos, true, false)
         SetEntityInvincible(player, false)
-        Wait(1500)
-        DoScreenFadeIn(1800)
+        ClearPedBloodDamage(player)
         Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
         Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
-        Citizen.InvokeNative(0xC6258F41D86676E0, player, 2, 100) -- SetAttributeCoreValue
         TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
         TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-        ClearPedBloodDamage(player)
         SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
         RemoveAllPedWeapons(player, true, true)
         -- reset death timer
         deathactive = false
         deathTimerStarted = false
         deathSecondsRemaining = 0
+        Wait(1500)
+        DoScreenFadeIn(1800)
     end
 end)
 
@@ -207,7 +232,7 @@ RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     while true do
         Wait(1000)
         if healthset == false then
-            if healthcore < savedhealth then
+            if healthcore < 100 then
                 Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100) -- SetAttributeCoreValue
                 SetEntityHealth(PlayerPedId(), savedhealth, 0)
                 healthset = true
