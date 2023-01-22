@@ -115,6 +115,7 @@ CreateThread(function()
                 deathTimerStarted = true
                 deathTimer()
                 deathactive = true
+                TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
             end
         end
     end
@@ -238,6 +239,7 @@ RegisterNetEvent('rsg-medic:clent:revive', function()
         deathSecondsRemaining = 0
         Wait(1500)
         DoScreenFadeIn(1800)
+        TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
     end
 end)
 
@@ -267,6 +269,7 @@ RegisterNetEvent('rsg-medic:clent:adminRevive', function()
     deathSecondsRemaining = 0
     Wait(1500)
     DoScreenFadeIn(1800)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -295,6 +298,7 @@ RegisterNetEvent('rsg-medic:clent:playerRevive', function()
     deathSecondsRemaining = 0
     Wait(1500)
     DoScreenFadeIn(1800)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
