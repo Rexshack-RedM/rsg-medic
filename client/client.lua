@@ -6,6 +6,7 @@ local mediclocation
 local medicsonduty = 0
 local healthset = false
 local closestRespawn = nil
+local medicCalled = false
 
 -----------------------------------------------------------------------------------
 
@@ -117,6 +118,17 @@ CreateThread(function()
     end
 end)
 
+-- Medic Call delay
+local MedicCalled = function()
+    Citizen.CreateThread(function()
+        while true do
+            Wait(30000)
+            medicCalled = false
+            return
+        end
+    end)
+end
+
 -- display respawn message and countdown
 CreateThread(function()
     while true do
@@ -128,7 +140,7 @@ CreateThread(function()
             if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty == 0 then
                 DrawTxt('PRESS [E] TO RESPAWN', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
-            if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty > 0 then
+            if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty > 0 and not medicCalled then
                 DrawTxt('PRESS [E] TO RESPAWN - PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
             if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
@@ -136,12 +148,14 @@ CreateThread(function()
                 TriggerEvent('rsg-medic:clent:revive')
                 TriggerServerEvent('rsg-medic:server:deathactions')
             end
-            if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['J'] and medicsonduty > 0) then
+            if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['J']) and medicsonduty > 0 and not medicCalled then
+                medicCalled = true
                 deathTimerStarted = false
                 local player = PlayerPedId()
                 coords = GetEntityCoords(player, true)
                 TriggerEvent('rsg-medic:client:medicAlert', coords, 'player needs help!')
                 RSGCore.Functions.Notify('medic has been called', 'primary')
+                MedicCalled()
             end
         end
     end
@@ -193,6 +207,7 @@ RegisterNetEvent('rsg-medic:clent:revive', function()
         -- reset death timer
         deathactive = false
         deathTimerStarted = false
+    medicCalled = false
         deathSecondsRemaining = 0
         Wait(1500)
         DoScreenFadeIn(1800)
@@ -219,6 +234,7 @@ RegisterNetEvent('rsg-medic:clent:adminRevive', function()
 	-- reset death timer
 	deathactive = false
 	deathTimerStarted = false
+    medicCalled = false
 	deathSecondsRemaining = 0
 	Wait(1500)
 	DoScreenFadeIn(1800)
@@ -244,6 +260,7 @@ RegisterNetEvent('rsg-medic:clent:playerRevive', function()
 	-- reset death timer
 	deathactive = false
 	deathTimerStarted = false
+    medicCalled = false
 	deathSecondsRemaining = 0
 	Wait(1500)
 	DoScreenFadeIn(1800)
