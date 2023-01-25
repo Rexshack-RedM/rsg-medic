@@ -7,7 +7,7 @@ local medicsonduty = 0
 local healthset = false
 local closestRespawn = nil
 local medicCalled = false
-
+local blipEntries = {}
 -----------------------------------------------------------------------------------
 
 -- prompts and blips
@@ -23,6 +23,8 @@ CreateThread(function()
             SetBlipSprite(MedicBlip, GetHashKey(Config.Blip.blipSprite), true)
             SetBlipScale(MedicBlip, Config.Blip.blipScale)
             Citizen.InvokeNative(0x9CB1A1623062F402, MedicBlip, Config.Blip.blipName)
+
+            blipEntries[#blipEntries + 1] = { type = "BLIP", handle = MedicBlip }
         end
     end
 end)
@@ -150,7 +152,6 @@ CreateThread(function()
             end
             if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['J']) and medicsonduty > 0 and not medicCalled then
                 medicCalled = true
-                deathTimerStarted = false
                 local player = PlayerPedId()
                 coords = GetEntityCoords(player, true)
                 TriggerEvent('rsg-medic:client:medicAlert', coords, 'player needs help!')
@@ -352,3 +353,20 @@ RegisterNetEvent('rsg-medic:clent:storage', function()
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
+
+-- Cleanup
+AddEventHandler("onResourceStop", function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+
+    for i = 1, #Config.MedicJobLocations do
+        local pos = Config.MedicJobLocations[i]
+
+        exports['rsg-core']:deletePrompt(pos.prompt)
+    end
+
+    for i = 1, #blipEntries do
+        if blipEntries[i].type == "BLIP" then
+            RemoveBlip(blipEntries[i].handle)
+        end
+    end
+end)

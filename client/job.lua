@@ -1,5 +1,7 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local isHealingPerson = false
+local blipEntries = {}
+transG = Config.DeathTimer
 
 -- Functions
 local function loadAnimDict(dict)
@@ -69,6 +71,7 @@ RegisterNetEvent('rsg-medic:client:RevivePlayer', function()
                 TriggerServerEvent('rsg-medic:server:RevivePlayer', playerId)
                 FreezeEntityPosition(PlayerPedId(), false)
                 isHealingPerson = false
+                transG = 0
             end)
         else
             RSGCore.Functions.Notify(Lang:t('error.no_player'), 'error')
@@ -89,7 +92,7 @@ RegisterNetEvent('rsg-medic:client:TreatWounds', function()
             local dict = loadAnimDict('script_re@gold_panner@gold_success')
             TaskPlayAnim(PlayerPedId(), dict, 'SEARCH01', 8.0, 8.0, -1, 1, false, false, false)
             FreezeEntityPosition(PlayerPedId(), true)
-            RSGCore.Functions.Progressbar("treating", "Treast Wounds...", Config.MedicTreatTime, false, true, {
+            RSGCore.Functions.Progressbar("treating", "Treating Wounds...", Config.MedicTreatTime, false, true, {
                 disableMovement = true,
                 disableCarMovement = true,
                 disableMouse = false,
@@ -99,6 +102,7 @@ RegisterNetEvent('rsg-medic:client:TreatWounds', function()
                 TriggerServerEvent('rsg-medic:server:TreatWounds', playerId)
                 FreezeEntityPosition(PlayerPedId(), false)
                 isHealingPerson = false
+                transG = 0
             end)
         else
 			RSGCore.Functions.Notify(Lang:t('error.no_player'), 'error')
@@ -125,7 +129,6 @@ end)
 -- medic alert
 RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
     RSGCore.Functions.Notify(text, Config.JobRequired)
-    local transG = 250
     local blip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, coords.x, coords.y, coords.z)
     local blip2 = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, coords.x, coords.y, coords.z)
     local blipText = Lang:t('info.blip_text', {value = text})
@@ -136,14 +139,36 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
     SetBlipScale(blip, 0.8)
     SetBlipScale(blip2, 2.0)
     Citizen.InvokeNative(0x9CB1A1623062F402, blip, blipText)
+
+    blipEntries[#blipEntries + 1] = { type = "BLIP", handle = blip }
+    blipEntries[#blipEntries + 1] = { type = "BLIP", handle = blip2 }
+
     while transG ~= 0 do
         Wait(180 * 4)
         transG = transG - 1
-        if transG == 0 then
+
+        if transG < 0 then
+            transG = 0
+        end
+
+        if transG <= 0 then
             RemoveBlip(blip)
+            RemoveBlip(blip2)
+            transG = Config.DeathTimer
             return
         end
     end
 end)
 
 -----------------------------------------------------------------------------------
+
+-- Cleanup
+AddEventHandler("onResourceStop", function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+
+    for i = 1, #blipEntries do
+        if blipEntries[i].type == "BLIP" then
+            RemoveBlip(blipEntries[i].handle)
+        end
+    end
+end)
