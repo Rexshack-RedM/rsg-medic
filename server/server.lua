@@ -99,3 +99,18 @@ RSGCore.Functions.CreateCallback('rsg-medic:server:getmedics', function(source, 
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
+
+RegisterNetEvent('rsg-medic:server:medicAlert', function(text)
+    local src = source
+    local ped = GetPlayerPed(src)
+    local coords = GetEntityCoords(ped)
+    local players = RSGCore.Functions.GetRSGPlayers()
+    for k,v in pairs(players) do
+        if v.PlayerData.job.name == 'medic' and v.PlayerData.job.onduty then
+            local alertData = {title = Lang:t('info.new_call'), coords = {coords.x, coords.y, coords.z}, description = text}
+            TriggerClientEvent('rsg-medic:client:medicAlert', v.PlayerData.source, coords, text)
+        end
+    end
+end)
+
+------------------------------------------------------------------------------------------------------------------------
