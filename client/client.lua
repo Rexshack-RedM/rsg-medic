@@ -324,6 +324,10 @@ RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
             healthset = true
         end
     end
+
+    if Config.DisableRegeneration then
+        Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), 0.0)
+    end
 end)
 
 -- health update loop

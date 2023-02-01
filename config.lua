@@ -10,6 +10,7 @@ Config.WipeCashOnRespawn = false
 Config.MaxHealth = 600
 Config.MedicReviveTime = 5000
 Config.MedicTreatTime = 5000
+Config.DisableRegeneration = false -- enable/disable player health regenerations
 
 -- blip settings
 Config.Blip = {
