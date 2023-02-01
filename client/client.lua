@@ -110,14 +110,12 @@ CreateThread(function()
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
+
 -- get medics on-duty
-CreateThread(function()
-    while true do
-        Wait(1000)
-        RSGCore.Functions.TriggerCallback('rsg-medic:server:getmedics', function(mediccount)
-            medicsonduty = mediccount
-        end)
-    end
+AddEventHandler('rsg-medic:client:GetMedicsOnDuty', function()
+    RSGCore.Functions.TriggerCallback('rsg-medic:server:getmedics', function(mediccount)
+        medicsonduty = mediccount
+    end)
 end)
 
 -- Medic Call delay
@@ -150,13 +148,28 @@ CreateThread(function()
                 TriggerEvent('rsg-medic:clent:revive')
                 TriggerServerEvent('rsg-medic:server:deathactions')
             end
-            if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['J']) and medicsonduty > 0 and not medicCalled then
+            if deathactive and deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and IsControlPressed(0, RSGCore.Shared.Keybinds['J']) and not medicCalled then
+                
                 medicCalled = true
+
+                TriggerEvent("rsg-medic:client:GetMedicsOnDuty")
+
+                if medicsonduty == 0 then
+                    MedicCalled()
+                    goto continue
+                end
+
                 local player = PlayerPedId()
-                coords = GetEntityCoords(player, true)
-                TriggerEvent('rsg-medic:client:medicAlert', coords, 'player needs help!')
-                RSGCore.Functions.Notify('medic has been called', 'primary')
+                local coords = GetEntityCoords(player, true)
+                local text = 'A person needs medical help!'
+
+                TriggerServerEvent('rsg-medic:server:medicAlert', coords, text)
+
+                RSG.Notify.Right('Medic has been called!', 'success', 5000)
+
                 MedicCalled()
+
+                ::continue::
             end
         end
     end
@@ -225,20 +238,20 @@ RegisterNetEvent('rsg-medic:clent:adminRevive', function()
     local pos = GetEntityCoords(player, true)
     NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
     SetEntityInvincible(player, false)
-	ClearPedBloodDamage(player)
+    ClearPedBloodDamage(player)
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
     SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
     RemoveAllPedWeapons(player, true, true)
-	-- reset death timer
-	deathactive = false
-	deathTimerStarted = false
+    -- reset death timer
+    deathactive = false
+    deathTimerStarted = false
     medicCalled = false
-	deathSecondsRemaining = 0
-	Wait(1500)
-	DoScreenFadeIn(1800)
+    deathSecondsRemaining = 0
+    Wait(1500)
+    DoScreenFadeIn(1800)
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -251,20 +264,20 @@ RegisterNetEvent('rsg-medic:clent:playerRevive', function()
     local pos = GetEntityCoords(player, true)
     NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
     SetEntityInvincible(player, false)
-	ClearPedBloodDamage(player)
+    ClearPedBloodDamage(player)
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
     SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
     RemoveAllPedWeapons(player, true, true)
-	-- reset death timer
-	deathactive = false
-	deathTimerStarted = false
+    -- reset death timer
+    deathactive = false
+    deathTimerStarted = false
     medicCalled = false
-	deathSecondsRemaining = 0
-	Wait(1500)
-	DoScreenFadeIn(1800)
+    deathSecondsRemaining = 0
+    Wait(1500)
+    DoScreenFadeIn(1800)
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -295,18 +308,19 @@ end
 -- setup stored health on restart
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     print('player health adjusted')
+
     local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, PlayerPedId(), 0)
     local savedhealth = RSGCore.Functions.GetPlayerData().metadata["health"]
-    while true do
+
+    while not healthset do
         Wait(1000)
-        if healthset == false then
-            if healthcore < 100 then
-                Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100) -- SetAttributeCoreValue
-                SetEntityHealth(PlayerPedId(), savedhealth, 0)
-                healthset = true
-            else
-                Wait(1000)
-            end
+
+        if healthcore < 100 then
+            Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100) -- SetAttributeCoreValue
+            SetEntityHealth(PlayerPedId(), savedhealth, 0)
+            healthset = true
+        else
+            Wait(1000)
         end
     end
 end)

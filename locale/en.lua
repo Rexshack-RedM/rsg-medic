@@ -13,7 +13,7 @@ local Translations = {
         revive_player_a = 'Revive A Player or Yourself (Admin Only)',
         player_id = 'Player ID (may be empty)',
         blip_text = 'Medic Alert - %{text}',
-		new_call = 'New Call',
+        new_call = 'New Call',
     },
 }
 
