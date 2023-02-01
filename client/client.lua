@@ -321,6 +321,7 @@ RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
             healthset = true
         else
             Wait(1000)
+            healthset = true
         end
     end
 end)
