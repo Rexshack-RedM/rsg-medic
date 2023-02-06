@@ -7,6 +7,7 @@ local medicsonduty = 0
 local healthset = false
 local closestRespawn = nil
 local medicCalled = false
+local cam = nil
 local blipEntries = {}
 -----------------------------------------------------------------------------------
 
@@ -100,6 +101,16 @@ CreateThread(function()
         if NetworkIsPlayerActive(player) then
             local playerPed = PlayerPedId()
             if IsEntityDead(playerPed) and not deathactive then
+                local heading = GetEntityHeading(playerPed)
+                cam = CreateCam("DEFAULT_SCRIPTED_CAMERA", 1)
+
+                SetCamActive(cam, true)
+                RenderScriptCams(true, false, 3000, true, true)
+                AttachCamToEntity(cam, playerPed, 0.0, 2.0, 1.0, false)
+                SetCamFov(cam, 90.0)
+                heading = (heading > 180) and heading - 180 or heading + 180
+                SetCamRot(cam, -20.0, 0.0, heading, 2)
+
                 exports.spawnmanager:setAutoSpawn(false)
                 deathTimerStarted = true
                 deathTimer()
@@ -221,7 +232,9 @@ RegisterNetEvent('rsg-medic:clent:revive', function()
         -- reset death timer
         deathactive = false
         deathTimerStarted = false
-    medicCalled = false
+        medicCalled = false
+        RenderScriptCams(0, true, 200, true, true)
+        DestroyCam(cam, false)
         deathSecondsRemaining = 0
         Wait(1500)
         DoScreenFadeIn(1800)
@@ -249,6 +262,8 @@ RegisterNetEvent('rsg-medic:clent:adminRevive', function()
     deathactive = false
     deathTimerStarted = false
     medicCalled = false
+    RenderScriptCams(0, true, 200, true, true)
+    DestroyCam(cam, false)
     deathSecondsRemaining = 0
     Wait(1500)
     DoScreenFadeIn(1800)
@@ -275,6 +290,8 @@ RegisterNetEvent('rsg-medic:clent:playerRevive', function()
     deathactive = false
     deathTimerStarted = false
     medicCalled = false
+    RenderScriptCams(0, true, 200, true, true)
+    DestroyCam(cam, false)
     deathSecondsRemaining = 0
     Wait(1500)
     DoScreenFadeIn(1800)
