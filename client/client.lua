@@ -176,7 +176,7 @@ CreateThread(function()
 
                 TriggerServerEvent('rsg-medic:server:medicAlert', coords, text)
 
-                RSG.Notify.Right('Medic has been called!', 'success', 5000)
+                RSGCore.Functions.Notify('Medic has been called!', 'success', 5000)
 
                 MedicCalled()
 
