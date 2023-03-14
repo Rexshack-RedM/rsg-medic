@@ -146,6 +146,7 @@ CreateThread(function()
     while true do
         Wait(0)
         if deathactive == true then
+            TriggerEvent("rsg-medic:client:GetMedicsOnDuty")
             if deathTimerStarted == true and deathSecondsRemaining > 0 then
                 DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
