@@ -172,11 +172,9 @@ CreateThread(function()
                     goto continue
                 end
 
-                local player = PlayerPedId()
-                local coords = GetEntityCoords(player, true)
                 local text = 'A person needs medical help!'
 
-                TriggerServerEvent('rsg-medic:server:medicAlert', coords, text)
+                TriggerServerEvent('rsg-medic:server:medicAlert', text)
 
                 RSGCore.Functions.Notify('Medic has been called!', 'success', 5000)
 
