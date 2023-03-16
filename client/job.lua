@@ -69,6 +69,7 @@ RegisterNetEvent('rsg-medic:client:RevivePlayer', function()
             }, {}, {}, {}, function()
                 ClearPedTasks(PlayerPedId())
                 TriggerServerEvent('rsg-medic:server:RevivePlayer', playerId)
+                TriggerServerEvent('rsg-medic:server:deathactions')
                 FreezeEntityPosition(PlayerPedId(), false)
                 isHealingPerson = false
                 transG = 0
@@ -105,10 +106,10 @@ RegisterNetEvent('rsg-medic:client:TreatWounds', function()
                 transG = 0
             end)
         else
-			RSGCore.Functions.Notify(Lang:t('error.no_player'), 'error')
+            RSGCore.Functions.Notify(Lang:t('error.no_player'), 'error')
         end
     else
-		RSGCore.Functions.Notify(Lang:t('error.no_bandage'), 'error')
+        RSGCore.Functions.Notify(Lang:t('error.no_bandage'), 'error')
     end
 end)
 
