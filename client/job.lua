@@ -69,7 +69,6 @@ RegisterNetEvent('rsg-medic:client:RevivePlayer', function()
             }, {}, {}, {}, function()
                 ClearPedTasks(PlayerPedId())
                 TriggerServerEvent('rsg-medic:server:RevivePlayer', playerId)
-                TriggerServerEvent('rsg-medic:server:deathactions')
                 FreezeEntityPosition(PlayerPedId(), false)
                 isHealingPerson = false
                 transG = 0
