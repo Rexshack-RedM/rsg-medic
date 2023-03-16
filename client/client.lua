@@ -147,7 +147,6 @@ CreateThread(function()
         Wait(0)
         if deathactive == true then
             TriggerEvent("rsg-medic:client:GetMedicsOnDuty")
-            TriggerServerEvent('rsg-medic:server:deathactions')
             if deathTimerStarted == true and deathSecondsRemaining > 0 then
                 DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
@@ -160,6 +159,7 @@ CreateThread(function()
             if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
                 deathTimerStarted = false
                 TriggerEvent('rsg-medic:clent:revive')
+				TriggerServerEvent('rsg-medic:server:deathactions')
             end
             if deathactive and deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and IsControlPressed(0, RSGCore.Shared.Keybinds['J']) and not medicCalled then
                 
@@ -175,7 +175,6 @@ CreateThread(function()
                 local text = 'A person needs medical help!'
 
                 TriggerServerEvent('rsg-medic:server:medicAlert', text)
-
                 RSGCore.Functions.Notify('Medic has been called!', 'success', 5000)
 
                 MedicCalled()
