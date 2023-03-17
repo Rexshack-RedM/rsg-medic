@@ -45,7 +45,7 @@ RegisterNetEvent('rsg-medic:client:mainmenu', function(location)
                 txt = "",
                 icon = "fas fa-user-circle",
                 params = {
-                    event = 'rsg-medic:clent:ToggleDuty',
+                    event = 'rsg-medic:client:ToggleDuty',
                     isServer = false,
                 }
             },

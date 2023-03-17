@@ -14,7 +14,7 @@ end
 -----------------------------------------------------------------------------------
 
 -- toggle and set medic job
-RegisterNetEvent('rsg-medic:clent:ToggleDuty', function()
+RegisterNetEvent('rsg-medic:client:ToggleDuty', function()
     RSGCore.Functions.GetPlayerData(function(PlayerData)
         PlayerJob = PlayerData.job
         onDuty = PlayerData.job.onduty
