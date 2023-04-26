@@ -7,9 +7,110 @@ local medicsonduty = 0
 local healthset = false
 local closestRespawn = nil
 local medicCalled = false
-local cam = nil
+local Dead = false
+local deadcam = nil
+local angleY = 0.0
+local angleZ = 0.0
 local blipEntries = {}
 -----------------------------------------------------------------------------------
+
+local StartDeathCam = function()
+    ClearFocus()
+
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local fov = GetGameplayCamFov()
+
+    deadcam = Citizen.InvokeNative(0x40C23491CE83708E, "DEFAULT_SCRIPTED_CAMERA", coords, 0, 0, 0, fov)
+
+    SetCamActive(deadcam, true)
+    RenderScriptCams(true, true, 1000, true, false)
+end
+
+local EndDeathCam = function()
+    ClearFocus()
+
+    RenderScriptCams(false, false, 0, true, false)
+    DestroyCam(deadcam, false)
+
+    deadcam = nil
+end
+
+local ProcessNewPosition = function()
+    local mouseX = 0.0
+    local mouseY = 0.0
+    local ped = PlayerPedId()
+
+    if IsInputDisabled(0) then
+        mouseX = GetDisabledControlNormal(1, 0x6BC904FC) * 8.0
+        mouseY = GetDisabledControlNormal(1, 0x84574AE8) * 8.0
+    else
+        mouseX = GetDisabledControlNormal(1, 0x6BC904FC) * 0.5
+        mouseY = GetDisabledControlNormal(1, 0x84574AE8) * 0.5
+    end
+
+    angleZ = angleZ - mouseX
+    angleY = angleY + mouseY
+
+    if angleY > 89.0 then
+        angleY = 89.0
+    elseif angleY < -89.0 then
+        angleY = -89.0
+    end
+
+    local pCoords = GetEntityCoords(ped)
+
+    local behindCam =
+    {
+        x = pCoords.x + ((Cos(angleZ) * Cos(angleY)) + (Cos(angleY) * Cos(angleZ))) / 2 * (0.5 + 0.5),
+        y = pCoords.y + ((Sin(angleZ) * Cos(angleY)) + (Cos(angleY) * Sin(angleZ))) / 2 * (0.5 + 0.5),
+        z = pCoords.z + ((Sin(angleY))) * (0.5 + 0.5)
+    }
+
+    local rayHandle = StartShapeTestRay(pCoords.x, pCoords.y, pCoords.z + 0.5, behindCam.x, behindCam.y, behindCam.z, -1, ped, 0)
+
+    local _, hitBool, hitCoords, _, _ = GetShapeTestResult(rayHandle)
+
+    local maxRadius = 3.5
+
+    if (hitBool and Vdist(pCoords.x, pCoords.y, pCoords.z + 0.0, hitCoords) < 0.5 + 0.5) then
+        maxRadius = Vdist(pCoords.x, pCoords.y, pCoords.z + 0.0, hitCoords)
+    end
+
+    local offset =
+    {
+        x = ((Cos(angleZ) * Cos(angleY)) + (Cos(angleY) * Cos(angleZ))) / 2 * maxRadius,
+        y = ((Sin(angleZ) * Cos(angleY)) + (Cos(angleY) * Sin(angleZ))) / 2 * maxRadius,
+        z = ((Sin(angleY))) * maxRadius
+    }
+
+    local pos =
+    {
+        x = pCoords.x + offset.x,
+        y = pCoords.y + offset.y,
+        z = pCoords.z + offset.z
+    }
+
+    return pos
+end
+
+-- process camera controls
+local ProcessCamControls = function()
+    local ped = PlayerPedId()
+    local playerCoords = GetEntityCoords(ped)
+
+    -- disable 1st person as the 1st person camera can cause some glitches
+    Citizen.InvokeNative(0x05AB44D906738426)
+
+    -- calculate new position
+    local newPos = ProcessNewPosition()
+
+    -- set coords of cam
+    Citizen.InvokeNative(0xF9EE7D419EE49DE6, deadcam, newPos.x, newPos.y, newPos.z)
+
+    -- set rotation
+    Citizen.InvokeNative(0x948B39341C3A40C2, deadcam, playerCoords.x, playerCoords.y, playerCoords.z)
+end
 
 -- prompts and blips
 CreateThread(function()
@@ -101,22 +202,39 @@ CreateThread(function()
         if NetworkIsPlayerActive(player) then
             local playerPed = PlayerPedId()
             if IsEntityDead(playerPed) and not deathactive then
-                local heading = GetEntityHeading(playerPed)
-                cam = CreateCam("DEFAULT_SCRIPTED_CAMERA", 1)
-
-                SetCamActive(cam, true)
-                RenderScriptCams(true, false, 3000, true, true)
-                AttachCamToEntity(cam, playerPed, 0.0, 2.0, 1.0, false)
-                SetCamFov(cam, 90.0)
-                heading = (heading > 180) and heading - 180 or heading + 180
-                SetCamRot(cam, -20.0, 0.0, heading, 2)
-
                 exports.spawnmanager:setAutoSpawn(false)
                 deathTimerStarted = true
                 deathTimer()
                 deathactive = true
                 TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
             end
+        end
+    end
+end)
+
+-- Camera
+CreateThread(function()
+    while true do
+        Wait(4)
+
+        if deadcam and Dead then
+            ProcessCamControls()
+        end
+    end
+end)
+
+CreateThread(function()
+    while true do
+        Wait(1000)
+
+        if not Dead and deathactive then
+            Dead = true
+
+            StartDeathCam()
+        elseif Dead and not deathactive then
+            Dead = false
+
+            EndDeathCam()
         end
     end
 end)
@@ -229,8 +347,6 @@ RegisterNetEvent('rsg-medic:clent:revive', function()
         deathactive = false
         deathTimerStarted = false
         medicCalled = false
-        RenderScriptCams(0, true, 200, true, true)
-        DestroyCam(cam, false)
         deathSecondsRemaining = 0
         Wait(1500)
         DoScreenFadeIn(1800)
@@ -259,8 +375,6 @@ RegisterNetEvent('rsg-medic:clent:adminRevive', function()
     deathactive = false
     deathTimerStarted = false
     medicCalled = false
-    RenderScriptCams(0, true, 200, true, true)
-    DestroyCam(cam, false)
     deathSecondsRemaining = 0
     Wait(1500)
     DoScreenFadeIn(1800)
@@ -288,8 +402,6 @@ RegisterNetEvent('rsg-medic:clent:playerRevive', function()
     deathactive = false
     deathTimerStarted = false
     medicCalled = false
-    RenderScriptCams(0, true, 200, true, true)
-    DestroyCam(cam, false)
     deathSecondsRemaining = 0
     Wait(1500)
     DoScreenFadeIn(1800)
