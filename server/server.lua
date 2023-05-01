@@ -35,6 +35,23 @@ end, "admin")
 
 ------------------------------------------------------------------------------------------------------------------------
 
+RSGCore.Commands.Add("kill", Lang:t('info.kill_player'), {{name = "id", help = Lang:t('info.player_id')}}, true, function(source, args)
+    local src = source
+    local target = tonumber(args[1])
+
+    local Player = RSGCore.Functions.GetPlayer(target)
+
+    if not Player then
+        RSGCore.Functions.Notify(src, Lang:t('error.not_online'), 'error')
+
+        return
+    end
+
+    TriggerClientEvent('rsg-medic:client:KillPlayer', Player.PlayerData.source)
+end, "admin")
+
+------------------------------------------------------------------------------------------------------------------------
+
 -- set player health
 RegisterNetEvent('rsg-medic:server:SetHealth', function(amount)
     local src = source

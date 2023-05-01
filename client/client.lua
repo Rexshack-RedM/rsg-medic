@@ -500,6 +500,11 @@ RegisterNetEvent('rsg-medic:clent:storage', function()
     end
 end)
 
+RegisterNetEvent('rsg-medic:client:KillPlayer', function()
+    local ped = PlayerPedId()
+
+    SetEntityHealth(ped, 0)
+end)
 ------------------------------------------------------------------------------------------------------------------------
 
 -- Cleanup
