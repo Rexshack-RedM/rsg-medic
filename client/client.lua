@@ -1,8 +1,11 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
+
+local createdEntries = {}
+local isLoggedIn = false
 local deathSecondsRemaining = 0
 local deathTimerStarted = false
 local deathactive = false
-local mediclocation
+local mediclocation = nil
 local medicsonduty = 0
 local healthset = false
 local closestRespawn = nil
@@ -11,9 +14,42 @@ local Dead = false
 local deadcam = nil
 local angleY = 0.0
 local angleZ = 0.0
-local blipEntries = {}
------------------------------------------------------------------------------------
 
+
+------------------------------------------------------ FUNCTIONS -------------------------------------------------------
+
+
+-- Death Timer
+local deathTimer = function()
+    deathSecondsRemaining = Config.DeathTimer
+
+    CreateThread(function()
+        while deathSecondsRemaining > 0 do
+            Wait(1000)
+
+            deathSecondsRemaining = deathSecondsRemaining - 1
+
+            TriggerEvent("rsg-medic:client:GetMedicsOnDuty")
+        end
+    end)
+end
+
+-- Drawtext for Countdown
+local DrawTxt = function(str, x, y, w, h, enableShadow, col1, col2, col3, a, centre)
+    local string = CreateVarString(10, "LITERAL_STRING", str)
+
+    SetTextScale(w, h)
+    SetTextColor(math.floor(col1), math.floor(col2), math.floor(col3), math.floor(a))
+    SetTextCentre(centre)
+
+    if enableShadow then
+        SetTextDropshadow(1, 0, 0, 0, 255)
+    end
+
+    DisplayText(string, x, y)
+end
+
+-- Start Death Cam
 local StartDeathCam = function()
     ClearFocus()
 
@@ -27,6 +63,7 @@ local StartDeathCam = function()
     RenderScriptCams(true, true, 1000, true, false)
 end
 
+-- End Death Cam
 local EndDeathCam = function()
     ClearFocus()
 
@@ -36,6 +73,7 @@ local EndDeathCam = function()
     deadcam = nil
 end
 
+-- Update Death Cam Position
 local ProcessNewPosition = function()
     local mouseX = 0.0
     local mouseY = 0.0
@@ -94,7 +132,7 @@ local ProcessNewPosition = function()
     return pos
 end
 
--- process camera controls
+-- Process Camera Controls
 local ProcessCamControls = function()
     local ped = PlayerPedId()
     local playerCoords = GetEntityCoords(ped)
@@ -112,203 +150,31 @@ local ProcessCamControls = function()
     Citizen.InvokeNative(0x948B39341C3A40C2, deadcam, playerCoords.x, playerCoords.y, playerCoords.z)
 end
 
--- prompts and blips
-CreateThread(function()
-    for medic, v in pairs(Config.MedicJobLocations) do
-        exports['rsg-core']:createPrompt(v.prompt, v.coords, RSGCore.Shared.Keybinds['J'], 'Open ' .. v.name, {
-            type = 'client',
-            event = 'rsg-medic:client:mainmenu',
-            args = { v.prompt },
-        })
-        if v.showblip == true then
-            local MedicBlip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, v.coords)
-            SetBlipSprite(MedicBlip, GetHashKey(Config.Blip.blipSprite), true)
-            SetBlipScale(MedicBlip, Config.Blip.blipScale)
-            Citizen.InvokeNative(0x9CB1A1623062F402, MedicBlip, Config.Blip.blipName)
-
-            blipEntries[#blipEntries + 1] = { type = "BLIP", handle = MedicBlip }
-        end
-    end
-end)
-
--- medic menu
-RegisterNetEvent('rsg-medic:client:mainmenu', function(location)
-    local job = RSGCore.Functions.GetPlayerData().job.name
-    if job == Config.JobRequired then
-        mediclocation = location
-        exports['rsg-menu']:openMenu({
-            {
-                header = 'Medic Menu',
-                isMenuHeader = true,
-            },
-            {
-                header = "Toggle Duty",
-                txt = "",
-                icon = "fas fa-user-circle",
-                params = {
-                    event = 'rsg-medic:client:ToggleDuty',
-                    isServer = false,
-                }
-            },
-            {
-                header = "Medical Supplies",
-                txt = "",
-                icon = "fas fa-heartbeat",
-                params = {
-                    event = 'rsg-medic:clent:OpenMedicSupplies',
-                    isServer = false,
-                }
-            },
-            {
-                header = "Medic Storage",
-                txt = "",
-                icon = "fas fa-box",
-                params = {
-                    event = 'rsg-medic:clent:storage',
-                    isServer = false,
-                    args = {},
-                }
-            },
-            {
-                header = "Job Management",
-                txt = "",
-                icon = "fas fa-user-circle",
-                params = {
-                    event = 'rsg-bossmenu:client:OpenMenu',
-                    isServer = false,
-                    args = {},
-                }
-            },
-            {
-                header = ">> Close Menu <<",
-                txt = '',
-                params = {
-                    event = 'rsg-menu:closeMenu',
-                }
-            },
-        })
-    else
-        RSGCore.Functions.Notify('you are not a Medic!', 'error')
-    end
-end)
-
-------------------------------------------------------------------------------------------------------------------------
-
--- register death
-CreateThread(function()
-    while true do
-        Wait(1000)
-        local player = PlayerId()
-        if NetworkIsPlayerActive(player) then
-            local playerPed = PlayerPedId()
-            if IsEntityDead(playerPed) and not deathactive then
-                exports.spawnmanager:setAutoSpawn(false)
-                deathTimerStarted = true
-                deathTimer()
-                deathactive = true
-                TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
-            end
-        end
-    end
-end)
-
--- Camera
-CreateThread(function()
-    while true do
-        Wait(4)
-
-        if deadcam and Dead then
-            ProcessCamControls()
-        end
-    end
-end)
-
-CreateThread(function()
-    while true do
-        Wait(1000)
-
-        if not Dead and deathactive then
-            Dead = true
-
-            StartDeathCam()
-        elseif Dead and not deathactive then
-            Dead = false
-
-            EndDeathCam()
-        end
-    end
-end)
-
-------------------------------------------------------------------------------------------------------------------------
-
--- get medics on-duty
-AddEventHandler('rsg-medic:client:GetMedicsOnDuty', function()
-    RSGCore.Functions.TriggerCallback('rsg-medic:server:getmedics', function(mediccount)
-        medicsonduty = mediccount
-    end)
-end)
-
--- Medic Call delay
+-- Medic Call Delay
 local MedicCalled = function()
-    Citizen.CreateThread(function()
+    local delay = Config.MedicCallDelay * 1000
+
+    CreateThread(function()
         while true do
-            Wait(30000)
+            Wait(delay)
+
             medicCalled = false
+
             return
         end
     end)
 end
 
--- display respawn message and countdown
-CreateThread(function()
-    while true do
-        Wait(0)
-        if deathactive == true then
-            if deathTimerStarted == true and deathSecondsRemaining > 0 then
-                DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-            end
-            if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty == 0 then
-                DrawTxt('PRESS [E] TO RESPAWN', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-            end
-            if deathTimerStarted == true and deathSecondsRemaining == 0 and medicsonduty > 0 and not medicCalled then
-                DrawTxt('PRESS [E] TO RESPAWN - PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-            end
-            if deathTimerStarted == true and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
-                deathTimerStarted = false
-                TriggerEvent('rsg-medic:clent:revive')
-                TriggerServerEvent('rsg-medic:server:deathactions')
-            end
-            if deathactive and deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and IsControlPressed(0, RSGCore.Shared.Keybinds['J']) and not medicCalled then
-                
-                medicCalled = true
-
-                if medicsonduty == 0 then
-                    MedicCalled()
-                    goto continue
-                end
-
-                local text = 'A person needs medical help!'
-
-                TriggerServerEvent('rsg-medic:server:medicAlert', text)
-                RSGCore.Functions.Notify('Medic has been called!', 'success', 5000)
-
-                MedicCalled()
-
-                ::continue::
-            end
-        end
-    end
-end)
-
-------------------------------------------------------------------------------------------------------------------------
-
--- set closest respawn
+-- Set Closest Respawn
 local function SetClosestRespawn()
     local pos = GetEntityCoords(PlayerPedId(), true)
     local current = nil
     local dist = nil
-    for k, v in pairs(Config.RespawnLocations) do
-        local dist2 = #(pos - vector3(Config.RespawnLocations[k].coords.x, Config.RespawnLocations[k].coords.y, Config.RespawnLocations[k].coords.z))
+
+    for k, _ in pairs(Config.RespawnLocations) do
+        local dest = vector3(Config.RespawnLocations[k].coords.x, Config.RespawnLocations[k].coords.y, Config.RespawnLocations[k].coords.z)
+        local dist2 = #(pos - dest)
+
         if current then
             if dist2 < dist then
                 current = k
@@ -319,21 +185,273 @@ local function SetClosestRespawn()
             current = k
         end
     end
+
     if current ~= closestRespawn then
         closestRespawn = current
     end
 end
 
-------------------------------------------------------------------------------------------------------------------------
 
--- player revive after pressing [E]
-RegisterNetEvent('rsg-medic:clent:revive', function()
-    SetClosestRespawn()
-    local player = PlayerPedId()
-    if deathactive == true then
-        DoScreenFadeOut(500)
+------------------------------------------------------- THREADS --------------------------------------------------------
+
+
+-- Prompts and Blips
+CreateThread(function()
+    for i = 1, #Config.MedicJobLocations do
+        local loc = Config.MedicJobLocations[i]
+
+        exports['rsg-core']:createPrompt(loc.prompt, loc.coords, RSGCore.Shared.Keybinds['J'], 'Open '..loc.name,
+        {
+            type = 'client',
+            event = 'rsg-medic:client:mainmenu',
+            args = {loc.prompt, loc.name}
+        })
+
+        createdEntries[#createdEntries + 1] = {type = "PROMPT", handle = loc.prompt}
+
+        if loc.showblip then
+            local MedicBlip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, loc.coords)
+
+            SetBlipSprite(MedicBlip, GetHashKey(Config.Blip.blipSprite), true)
+            SetBlipScale(MedicBlip, Config.Blip.blipScale)
+            Citizen.InvokeNative(0x9CB1A1623062F402, MedicBlip, Config.Blip.blipName)
+
+            createdEntries[#createdEntries + 1] = {type = "BLIP", handle = MedicBlip}
+        end
+    end
+end)
+
+-- Register Death
+CreateThread(function()
+    while not isLoggedIn do
+        isLoggedIn = LocalPlayer.state['isLoggedIn']
+
+        Wait(5000)
+    end
+
+    while true do
         Wait(1000)
+
+        local playerPed = PlayerPedId()
+        local dead = IsEntityDead(playerPed)
+
+        if dead and not deathactive then
+            exports.spawnmanager:setAutoSpawn(false)
+
+            deathTimerStarted = true
+
+            deathTimer()
+
+            deathactive = true
+
+            TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
+            TriggerEvent('rsg-medic:client:DeathCam')
+        end
+    end
+end)
+
+-- Display Respawn Message and Countdown
+CreateThread(function()
+    while true do
+        local t = 1000
+
+        if deathactive then
+            t = 4
+
+            if deathTimerStarted and deathSecondsRemaining > 0 then
+                DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
+            end
+
+            if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty == 0 then
+                DrawTxt('PRESS [E] TO RESPAWN', 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+            end
+
+            if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty > 0 and not medicCalled then
+                if deathSecondsRemaining == 0 then
+                    DrawTxt('PRESS [E] TO RESPAWN - PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                else
+                    DrawTxt('PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                end
+            end
+
+            if deathTimerStarted and deathSecondsRemaining == 0 and IsControlPressed(0, RSGCore.Shared.Keybinds['E']) then
+                deathTimerStarted = false
+
+                TriggerEvent('rsg-medic:client:revive')
+                TriggerServerEvent('rsg-medic:server:deathactions')
+            end
+
+            if deathactive and deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and IsControlPressed(0, RSGCore.Shared.Keybinds['J']) and not medicCalled then
+                medicCalled = true
+
+                if medicsonduty == 0 then
+                    MedicCalled()
+
+                    goto continue
+                end
+
+                local text = 'A person needs medical help!'
+
+                TriggerServerEvent('rsg-medic:server:medicAlert', text)
+
+                RSGCore.Functions.Notify('Medic has been called!', 'success', 5000)
+
+                MedicCalled()
+
+                ::continue::
+            end
+        end
+
+        Wait(t)
+    end
+end)
+
+-- Health Update Loop
+CreateThread(function()
+    local lastHealth = 0
+
+    while true do
+        if healthset then
+            local ped = PlayerPedId()
+            local health = GetEntityHealth(ped)
+
+            if lastHealth ~= health then
+                TriggerServerEvent('rsg-medic:server:SetHealth', health)
+            end
+
+            lastHealth = health
+
+            Wait(1000)
+        else
+            Wait(5000)
+        end
+    end
+end)
+
+
+-------------------------------------------------------- EVENTS --------------------------------------------------------
+
+
+-- Medic Menu
+AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
+    local job = RSGCore.Functions.GetPlayerData().job.name
+
+    if job ~= Config.JobRequired then
+        RSGCore.Functions.Notify('You are not a Medic!', 'error')
+
+        return
+    end
+
+    mediclocation = location
+
+    exports['rsg-menu']:openMenu(
+    {
+        {
+            header = name,
+            icon = "fas fa-briefcase-medical",
+            isMenuHeader = true
+        },
+        {
+            header = "Toggle Duty",
+            txt = "",
+            icon = "fas fa-user-circle",
+            params =
+            {
+                event = 'rsg-medic:client:ToggleDuty',
+                isServer = false
+            }
+        },
+        {
+            header = "Medical Supplies",
+            txt = "",
+            icon = "fas fa-heartbeat",
+            params =
+            {
+                event = 'rsg-medic:client:OpenMedicSupplies',
+                isServer = false
+            }
+        },
+        {
+            header = "Medic Storage",
+            txt = "",
+            icon = "fas fa-box",
+            params =
+            {
+                event = 'rsg-medic:client:storage',
+                isServer = false
+            }
+        },
+        {
+            header = "Job Management",
+            txt = "",
+            icon = "fas fa-building",
+            params =
+            {
+                event = 'rsg-bossmenu:client:OpenMenu',
+                isServer = false
+            }
+        },
+        {
+            header = "Close Menu",
+            txt = '',
+            icon = "fas fa-xmark",
+            params =
+            {
+                event = 'rsg-menu:closeMenu'
+            }
+        }
+    })
+end)
+
+-- Death Cam
+AddEventHandler('rsg-medic:client:DeathCam', function()
+    CreateThread(function()
+        while deathTimerStarted do
+            Wait(1000)
+
+            if not Dead and deathactive then
+                Dead = true
+
+                StartDeathCam()
+            elseif Dead and not deathactive then
+                Dead = false
+
+                EndDeathCam()
+            end
+        end
+    end)
+
+    Wait(3000)
+
+    CreateThread(function()
+        while deadcam and Dead do
+            Wait(4)
+
+            ProcessCamControls()
+        end
+    end)
+end)
+
+-- Get Medics On-Duty
+AddEventHandler('rsg-medic:client:GetMedicsOnDuty', function()
+    RSGCore.Functions.TriggerCallback('rsg-medic:server:getmedics', function(mediccount)
+        medicsonduty = mediccount
+    end)
+end)
+
+-- Player Revive After Pressing [E]
+AddEventHandler('rsg-medic:client:revive', function()
+    SetClosestRespawn()
+
+    local player = PlayerPedId()
+
+    if deathactive then
+        DoScreenFadeOut(500)
+
+        Wait(1000)
+
         local respawnPos = Config.RespawnLocations[closestRespawn].coords
+
         NetworkResurrectLocalPlayer(respawnPos, true, false)
         SetEntityInvincible(player, false)
         ClearPedBloodDamage(player)
@@ -343,25 +461,30 @@ RegisterNetEvent('rsg-medic:clent:revive', function()
         TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
         SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
         RemoveAllPedWeapons(player, true, true)
-        -- reset death timer
+
+        -- Reset Death Timer
         deathactive = false
         deathTimerStarted = false
         medicCalled = false
         deathSecondsRemaining = 0
+
         Wait(1500)
+
         DoScreenFadeIn(1800)
+
         TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
     end
 end)
 
-------------------------------------------------------------------------------------------------------------------------
-
--- admin revive
-RegisterNetEvent('rsg-medic:clent:adminRevive', function()
+-- Admin Revive
+RegisterNetEvent('rsg-medic:client:adminRevive', function()
     local player = PlayerPedId()
-    DoScreenFadeOut(500)
-    Wait(1000)
     local pos = GetEntityCoords(player, true)
+
+    DoScreenFadeOut(500)
+
+    Wait(1000)
+
     NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
     SetEntityInvincible(player, false)
     ClearPedBloodDamage(player)
@@ -371,24 +494,29 @@ RegisterNetEvent('rsg-medic:clent:adminRevive', function()
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
     SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
     RemoveAllPedWeapons(player, true, true)
-    -- reset death timer
+
+    -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
     medicCalled = false
     deathSecondsRemaining = 0
+
     Wait(1500)
+
     DoScreenFadeIn(1800)
+
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
 end)
 
-------------------------------------------------------------------------------------------------------------------------
-
--- player revive
-RegisterNetEvent('rsg-medic:clent:playerRevive', function()
+-- Player Revive
+RegisterNetEvent('rsg-medic:client:playerRevive', function()
     local player = PlayerPedId()
-    DoScreenFadeOut(500)
-    Wait(1000)
     local pos = GetEntityCoords(player, true)
+
+    DoScreenFadeOut(500)
+
+    Wait(1000)
+
     NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
     SetEntityInvincible(player, false)
     ClearPedBloodDamage(player)
@@ -398,58 +526,41 @@ RegisterNetEvent('rsg-medic:clent:playerRevive', function()
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
     SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
     RemoveAllPedWeapons(player, true, true)
-    -- reset death timer
+
+    -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
     medicCalled = false
     deathSecondsRemaining = 0
+
     Wait(1500)
+
     DoScreenFadeIn(1800)
+
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
 end)
 
-------------------------------------------------------------------------------------------------------------------------
+-- Setup Stored Health on Spawn
+AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
+    print('Player health adjusted!')
 
--- death timer
-function deathTimer()
-    deathSecondsRemaining = Config.DeathTimer
-    Citizen.CreateThread(function()
-        while deathSecondsRemaining > 0 do
-            Wait(1000)
-            deathSecondsRemaining = deathSecondsRemaining - 1
-            TriggerEvent("rsg-medic:client:GetMedicsOnDuty")
-        end
-    end)
-end
-
--- drawtext for countdown
-function DrawTxt(str, x, y, w, h, enableShadow, col1, col2, col3, a, centre)
-    local str = CreateVarString(10, "LITERAL_STRING", str)
-    SetTextScale(w, h)
-    SetTextColor(math.floor(col1), math.floor(col2), math.floor(col3), math.floor(a))
-    SetTextCentre(centre)
-    if enableShadow then SetTextDropshadow(1, 0, 0, 0, 255) end
-    DisplayText(str, x, y)
-end
-
-------------------------------------------------------------------------------------------------------------------------
-
--- setup stored health on restart
-RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
-    print('player health adjusted')
-
-    local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, PlayerPedId(), 0)
+    local ped = PlayerPedId()
+    local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, ped, 0)
     local savedhealth = RSGCore.Functions.GetPlayerData().metadata["health"]
 
     while not healthset do
         Wait(1000)
 
+        ped = PlayerPedId()
+
         if healthcore < 100 then
-            Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100) -- SetAttributeCoreValue
-            SetEntityHealth(PlayerPedId(), savedhealth, 0)
+            Citizen.InvokeNative(0xC6258F41D86676E0, ped, 0, 100) -- SetAttributeCoreValue
+            SetEntityHealth(ped, savedhealth, 0)
+
             healthset = true
         else
             Wait(1000)
+
             healthset = true
         end
     end
@@ -459,67 +570,59 @@ RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     end
 end)
 
--- health update loop
-CreateThread(function()
-    while true do
-        if healthset == true then
-            local health = GetEntityHealth(PlayerPedId())
-            if lastHealth ~= health then
-                TriggerServerEvent('rsg-medic:server:SetHealth', health)
-            end
-            lastHealth = health
-            Wait(1000)
-        else
-            Wait(5000)
-        end
-    end
-end)
+-- Medic Supplies
+AddEventHandler('rsg-medic:client:OpenMedicSupplies', function()
+    local job = RSGCore.Functions.GetPlayerData().job.name
 
-------------------------------------------------------------------------------------------------------------------------
+    if job ~= Config.JobRequired then return end
 
--- medic supplies
-RegisterNetEvent('rsg-medic:clent:OpenMedicSupplies')
-AddEventHandler('rsg-medic:clent:OpenMedicSupplies', function()
     local ShopItems = {}
     ShopItems.label = "Medic Supplies"
     ShopItems.items = Config.MedicSupplies
     ShopItems.slots = #Config.MedicSupplies
+
     TriggerServerEvent("inventory:server:OpenInventory", "shop", "MedicSupplies_"..math.random(1, 99), ShopItems)
 end)
 
--- medic storage
-RegisterNetEvent('rsg-medic:clent:storage', function()
+-- Medic Storage
+AddEventHandler('rsg-medic:client:storage', function()
     local job = RSGCore.Functions.GetPlayerData().job.name
     local stashloc = mediclocation
-    if job == Config.JobRequired then
-        TriggerServerEvent("inventory:server:OpenInventory", "stash", stashloc, {
-            maxweight = Config.StorageMaxWeight,
-            slots = Config.StorageMaxSlots,
-        })
-        TriggerEvent("inventory:client:SetCurrentStash", stashloc)
-    end
+
+    if job ~= Config.JobRequired then return end
+
+    TriggerServerEvent("inventory:server:OpenInventory", "stash", stashloc,
+    {
+        maxweight = Config.StorageMaxWeight,
+        slots = Config.StorageMaxSlots,
+    })
+
+    TriggerEvent("inventory:client:SetCurrentStash", stashloc)
 end)
 
-RegisterNetEvent('rsg-medic:client:KillPlayer', function()
+-- Kill Player
+RegisterNetEvent('rsg-medic:client:KillPlayer')
+AddEventHandler('rsg-medic:client:KillPlayer', function()
     local ped = PlayerPedId()
 
     SetEntityHealth(ped, 0)
 end)
-------------------------------------------------------------------------------------------------------------------------
 
 -- Cleanup
 AddEventHandler("onResourceStop", function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
 
-    for i = 1, #Config.MedicJobLocations do
-        local pos = Config.MedicJobLocations[i]
+    for i = 1, #createdEntries do
+        if createdEntries[i].type == "BLIP" then
+            if createdEntries[i].handle then
+                RemoveBlip(createdEntries[i].handle)
+            end
+        end
 
-        exports['rsg-core']:deletePrompt(pos.prompt)
-    end
-
-    for i = 1, #blipEntries do
-        if blipEntries[i].type == "BLIP" then
-            RemoveBlip(blipEntries[i].handle)
+        if createdEntries[i].type == "PROMPT" then
+            if createdEntries[i].handle then
+                exports['rsg-core']:deletePrompt(createdEntries[i].handle)
+            end
         end
     end
 end)
