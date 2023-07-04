@@ -69,6 +69,7 @@ local EndDeathCam = function()
 
     RenderScriptCams(false, false, 0, true, false)
     DestroyCam(deadcam, false)
+    DestroyAllCams(true)
 
     deadcam = nil
 end
@@ -262,7 +263,7 @@ CreateThread(function()
                 DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
 
-            if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty == 0 then
+            if deathTimerStarted and deathSecondsRemaining == 0 and medicsonduty == 0 then
                 DrawTxt('PRESS [E] TO RESPAWN', 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
 
@@ -406,7 +407,7 @@ end)
 -- Death Cam
 AddEventHandler('rsg-medic:client:DeathCam', function()
     CreateThread(function()
-        while deathTimerStarted do
+        while true do
             Wait(1000)
 
             if not Dead and deathactive then
@@ -418,16 +419,30 @@ AddEventHandler('rsg-medic:client:DeathCam', function()
 
                 EndDeathCam()
             end
+
+            if deathSecondsRemaining <= 0 and not deathactive then
+                Dead = false
+
+                EndDeathCam()
+
+                return
+            end
         end
     end)
 
-    Wait(3000)
-
     CreateThread(function()
-        while deadcam and Dead do
+        while true do
             Wait(4)
 
-            ProcessCamControls()
+            if deadcam and Dead then
+                ProcessCamControls()
+            end
+
+            if deathactive and not deadcam then
+                StartDeathCam()
+            end
+
+            if deathSecondsRemaining <= 0 and not deathactive then return end
         end
     end)
 end)
@@ -611,6 +626,8 @@ end)
 -- Cleanup
 AddEventHandler("onResourceStop", function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
+
+    DestroyAllCams(true)
 
     for i = 1, #createdEntries do
         if createdEntries[i].type == "BLIP" then
