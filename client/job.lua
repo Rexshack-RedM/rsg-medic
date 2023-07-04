@@ -1,8 +1,8 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 
 local blipEntries = {}
+
 local transG = Config.DeathTimer
-local medicbox = nil
 
 
 ------------------------------------------------------ FUNCTIONS -------------------------------------------------------
@@ -162,22 +162,22 @@ end)
 
 -- Medic Alert
 RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
-    RSGCore.Functions.Notify(text, 'medic')
+    RSGCore.Functions.Notify(text, 'medic', 5000)
 
     local blip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, coords.x, coords.y, coords.z)
     local blip2 = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, coords.x, coords.y, coords.z)
-    local blipText = Lang:t('info.blip_text', {value = text})
 
-    SetBlipSprite(blip, 1109348405, 1)
-    SetBlipSprite(blip2, -184692826, 1)
+    SetBlipSprite(blip, 1109348405)
+    SetBlipSprite(blip2, -184692826)
     Citizen.InvokeNative(0x662D364ABF16DE2F, blip, GetHashKey('BLIP_MODIFIER_AREA_PULSE'))
     Citizen.InvokeNative(0x662D364ABF16DE2F, blip2, GetHashKey('BLIP_MODIFIER_AREA_PULSE'))
     SetBlipScale(blip, 0.8)
     SetBlipScale(blip2, 2.0)
-    Citizen.InvokeNative(0x9CB1A1623062F402, blip, blipText)
+    Citizen.InvokeNative(0x9CB1A1623062F402, blip, text)
+    Citizen.InvokeNative(0x9CB1A1623062F402, blip2, text)
 
-    blipEntries[#blipEntries + 1] = {type = "BLIP", handle = blip}
-    blipEntries[#blipEntries + 1] = {type = "BLIP", handle = blip2}
+    blipEntries[#blipEntries + 1] = {coords = coords, handle = blip}
+    blipEntries[#blipEntries + 1] = {coords = coords, handle = blip2}
 
     -- Add GPS Route
 
@@ -191,15 +191,28 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
         while transG ~= 0 do
             Wait(180 * 4)
 
+            local ped = PlayerPedId()
+            local pcoord = GetEntityCoords(ped)
+            local distance = #(coords - pcoord)
             transG = transG - 1
 
-            if transG < 0 then
-                transG = 0
+            if Config.Debug then
+                print('Distance to Player Blip: '..tostring(distance)..' metres')
             end
 
-            if transG <= 0 then
+            if transG <= 0 or distance < 5.0 then
                 for i = 1, #blipEntries do
-                    if blipEntries[i].type == "BLIP" then
+                    local blips = blipEntries[i]
+                    local bcoords = blips.coords
+
+                    if coords == bcoords then
+                        if Config.Debug then
+                            print('')
+                            print('Blip Coords: '..tostring(bcoords))
+                            print('Blip Removed: '..tostring(blipEntries[i].handle))
+                            print('')
+                        end
+
                         RemoveBlip(blipEntries[i].handle)
                     end
                 end
@@ -220,8 +233,10 @@ end)
 AddEventHandler("onResourceStop", function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
 
+    ClearGpsMultiRoute(coords)
+
     for i = 1, #blipEntries do
-        if blipEntries[i].type == "BLIP" then
+        if blipEntries[i].handle then
             RemoveBlip(blipEntries[i].handle)
         end
     end

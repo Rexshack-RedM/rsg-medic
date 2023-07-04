@@ -303,6 +303,12 @@ CreateThread(function()
             end
         end
 
+        if Config.Debug then
+            print('deathTimerStarted: '..tostring(deathTimerStarted))
+            print('deathSecondsRemaining: '..tostring(deathSecondsRemaining))
+            print('medicsonduty: '..tostring(medicsonduty))
+        end
+
         Wait(t)
     end
 end)

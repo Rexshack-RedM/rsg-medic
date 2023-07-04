@@ -1,5 +1,7 @@
 Config = {}
 
+Config.Debug                    = false
+
 -- Settings
 Config.JobRequired              = 'medic'
 Config.StorageMaxWeight         = 4000000
