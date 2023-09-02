@@ -480,8 +480,6 @@ AddEventHandler('rsg-medic:client:revive', function()
         Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
         TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
         TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-        SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
-        RemoveAllPedWeapons(player, true, true)
 
         -- Reset Death Timer
         deathactive = false
@@ -513,8 +511,6 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function()
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
-    SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
-    RemoveAllPedWeapons(player, true, true)
 
     -- Reset Death Timer
     deathactive = false
@@ -545,8 +541,6 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
-    SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
-    RemoveAllPedWeapons(player, true, true)
 
     -- Reset Death Timer
     deathactive = false
