@@ -394,7 +394,7 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
             icon = "fas fa-building",
             params =
             {
-                event = 'rsg-bossmenu:client:OpenMenu',
+                event = 'rsg-bossmenu:client:mainmenu',
                 isServer = false
             }
         },
