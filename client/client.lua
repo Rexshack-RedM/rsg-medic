@@ -351,63 +351,37 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
 
     mediclocation = location
 
-    exports['rsg-menu']:openMenu(
-    {
-        {
-            header = name,
-            icon = "fas fa-briefcase-medical",
-            isMenuHeader = true
-        },
-        {
-            header = "Toggle Duty",
-            txt = "",
-            icon = "fas fa-user-circle",
-            params =
-            {
-                event = 'rsg-medic:client:ToggleDuty',
-                isServer = false
-            }
-        },
-        {
-            header = "Medical Supplies",
-            txt = "",
-            icon = "fas fa-heartbeat",
-            params =
-            {
-                event = 'rsg-medic:client:OpenMedicSupplies',
-                isServer = false
-            }
-        },
-        {
-            header = "Medic Storage",
-            txt = "",
-            icon = "fas fa-box",
-            params =
-            {
-                event = 'rsg-medic:client:storage',
-                isServer = false
-            }
-        },
-        {
-            header = "Job Management",
-            txt = "",
-            icon = "fas fa-building",
-            params =
-            {
+    lib.registerContext({
+        id = "medic_mainmenu",
+        title = name,
+        options = {
+             {   title = 'Manage employees',
+                icon = 'fa-solid fa-list',
+                description = 'Manage employees and business',
                 event = 'rsg-bossmenu:client:mainmenu',
-                isServer = false
-            }
-        },
-        {
-            header = "Close Menu",
-            txt = '',
-            icon = "fas fa-xmark",
-            params =
-            {
-                event = 'rsg-menu:closeMenu'
-            }
+                isBoss = true
+            }, 
+            {   title = 'Toggle Duty',
+                icon = 'fa-solid fa-shield-heart',
+                description = '',
+                event = 'rsg-medic:client:ToggleDuty',
+                arrow = true
+            },
+            {   title = 'Medical Supplies', 
+                icon = 'fa-solid fa-pils',
+                description = '',
+                event = 'rsg-medic:client:OpenMedicSupplies',
+                arrow = true
+            },
+            {   title = 'Medic Storage',
+                icon = 'fa-solid fa-box-open',
+                description = '',
+                event = 'rsg-medic:client:storage',
+                arrow = true
+            },
         }
     })
+    lib.showContext("medic_mainmenu")
 end)
 
 -- Death Cam
