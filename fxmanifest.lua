@@ -20,6 +20,7 @@ shared_scripts {
     '@ox_lib/init.lua',
     '@rsg-core/shared/locale.lua',
     'locale/en.lua',
+    'locale/*.lua',
     'config.lua',
 }
 
