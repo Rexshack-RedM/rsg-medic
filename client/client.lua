@@ -470,8 +470,8 @@ AddEventHandler('rsg-medic:client:revive', function()
 end)
 
 -- Admin Revive
-RegisterNetEvent('rsg-medic:client:adminRevive', function()
-    local player = PlayerPedId()
+RegisterNetEvent('rsg-medic:client:adminRevive', function(data)
+    local player = data.id
     local pos = GetEntityCoords(player, true)
 
     DoScreenFadeOut(500)
