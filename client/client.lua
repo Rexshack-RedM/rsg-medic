@@ -531,8 +531,7 @@ end)
 
 -- Setup Stored Health on Spawn
 AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
-    print('Player health adjusted!')
-
+    Wait(1000)
     local ped = PlayerPedId()
     local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, ped, 0)
     local savedhealth = RSGCore.Functions.GetPlayerData().metadata["health"]
@@ -545,11 +544,11 @@ AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
         if healthcore < 100 then
             Citizen.InvokeNative(0xC6258F41D86676E0, ped, 0, 100) -- SetAttributeCoreValue
             SetEntityHealth(ped, savedhealth, 0)
-
+            print('Player health adjusted!')
             healthset = true
         else
+            print('Player health adjusted!')
             Wait(1000)
-
             healthset = true
         end
     end
@@ -557,6 +556,7 @@ AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
     if Config.DisableRegeneration then
         Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), 0.0)
     end
+
 end)
 
 -- Medic Supplies
