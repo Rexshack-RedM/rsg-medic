@@ -531,7 +531,7 @@ end)
 
 -- Setup Stored Health on Spawn
 AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
-    Wait(1000)
+    Wait(5000)
     local ped = PlayerPedId()
     local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, ped, 0)
     local savedhealth = RSGCore.Functions.GetPlayerData().metadata["health"]
