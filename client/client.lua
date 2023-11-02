@@ -243,6 +243,7 @@ AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
     while true do
         
         local ped = PlayerPedId()
+        Citizen.InvokeNative(0xC6258F41D86676E0, ped, 0, 100)
         local health = GetEntityHealth(ped)
         
         if health == 0 and deathactive == false then
@@ -255,9 +256,14 @@ AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
         end
 
         TriggerServerEvent('rsg-medic:server:SetHealth', health)
-        --print('health '..health)
         Wait(5000)
         
+    end
+
+    if Config.DisableRegeneration then
+        Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), 0.0)
+    else
+        Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), Config.RegenerationRate)
     end
     
 end)
