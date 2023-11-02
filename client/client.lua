@@ -222,33 +222,44 @@ CreateThread(function()
     end
 end)
 
--- Register Death
-CreateThread(function()
-    while not isLoggedIn do
-        isLoggedIn = LocalPlayer.state['isLoggedIn']
+---------------------------------------------------------------------
+-- on player load / set health
+---------------------------------------------------------------------
+AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
+    RSGCore.Functions.TriggerCallback('rsg-medic:server:getplayerhealth', function(savedhealth)
+        -- set intial health
+        local ped = PlayerPedId()
+        print('player health set')
+        SetEntityHealth(ped, savedhealth, 0)
+        TriggerEvent('rsg-medic:server:playerHealthUpdate')
+    end)
+end)
 
-        Wait(5000)
-    end
-
+---------------------------------------------------------------------
+-- player dealth loop
+---------------------------------------------------------------------
+AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
+        
     while true do
-        Wait(1000)
-
-        local playerPed = PlayerPedId()
-        local dead = IsEntityDead(playerPed)
-
-        if dead and not deathactive then
+        
+        local ped = PlayerPedId()
+        local health = GetEntityHealth(ped)
+        
+        if health == 0 and deathactive == false then
             exports.spawnmanager:setAutoSpawn(false)
-
             deathTimerStarted = true
-
             deathTimer()
-
             deathactive = true
-
             TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
             TriggerEvent('rsg-medic:client:DeathCam')
         end
+
+        TriggerServerEvent('rsg-medic:server:SetHealth', health)
+        print('health '..health)
+        Wait(5000)
+        
     end
+    
 end)
 
 -- Display Respawn Message and Countdown
@@ -312,29 +323,6 @@ CreateThread(function()
         Wait(t)
     end
 end)
-
--- Health Update Loop
-CreateThread(function()
-    local lastHealth = 0
-
-    while true do
-        if healthset then
-            local ped = PlayerPedId()
-            local health = GetEntityHealth(ped)
-
-            if lastHealth ~= health then
-                TriggerServerEvent('rsg-medic:server:SetHealth', health)
-            end
-
-            lastHealth = health
-
-            Wait(1000)
-        else
-            Wait(5000)
-        end
-    end
-end)
-
 
 -------------------------------------------------------- EVENTS --------------------------------------------------------
 
@@ -446,7 +434,6 @@ AddEventHandler('rsg-medic:client:revive', function()
         Wait(1000)
 
         local respawnPos = Config.RespawnLocations[closestRespawn].coords
-
         NetworkResurrectLocalPlayer(respawnPos, true, false)
         SetEntityInvincible(player, false)
         ClearPedBloodDamage(player)
@@ -454,6 +441,7 @@ AddEventHandler('rsg-medic:client:revive', function()
         Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
         TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
         TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
+        TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
 
         -- Reset Death Timer
         deathactive = false
@@ -485,7 +473,8 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function(data)
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
-
+    TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
+    
     -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
@@ -515,7 +504,8 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
-
+    TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
+    
     -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
@@ -527,36 +517,6 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     DoScreenFadeIn(1800)
 
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
-end)
-
--- Setup Stored Health on Spawn
-AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
-    Wait(5000)
-    local ped = PlayerPedId()
-    local healthcore = Citizen.InvokeNative(0x36731AC041289BB1, ped, 0)
-    local savedhealth = RSGCore.Functions.GetPlayerData().metadata["health"]
-
-    while not healthset do
-        Wait(1000)
-
-        ped = PlayerPedId()
-
-        if healthcore < 100 then
-            Citizen.InvokeNative(0xC6258F41D86676E0, ped, 0, 100) -- SetAttributeCoreValue
-            SetEntityHealth(ped, savedhealth, 0)
-            print('Player health adjusted!')
-            healthset = true
-        else
-            print('Player health adjusted!')
-            Wait(1000)
-            healthset = true
-        end
-    end
-
-    if Config.DisableRegeneration then
-        Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), 0.0)
-    end
-
 end)
 
 -- Medic Supplies

@@ -93,6 +93,14 @@ RegisterNetEvent('rsg-medic:server:deathactions', function()
     end
 end)
 
+-- Get Players Health
+RSGCore.Functions.CreateCallback('rsg-medic:server:getplayerhealth', function(source, cb)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+	local health = Player.PlayerData.metadata["health"]
+    cb(health)
+end)
+
 -- Set Player Health
 RegisterNetEvent('rsg-medic:server:SetHealth', function(amount)
     local src = source
@@ -102,9 +110,7 @@ RegisterNetEvent('rsg-medic:server:SetHealth', function(amount)
 
     amount = tonumber(amount)
 
-    if amount < 1 then
-        amount = 1
-    elseif amount > Config.MaxHealth then
+    if amount > Config.MaxHealth then
         amount = Config.MaxHealth
     end
 
