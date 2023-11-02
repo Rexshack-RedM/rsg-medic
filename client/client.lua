@@ -255,7 +255,7 @@ AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
         end
 
         TriggerServerEvent('rsg-medic:server:SetHealth', health)
-        print('health '..health)
+        --print('health '..health)
         Wait(5000)
         
     end
