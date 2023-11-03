@@ -18,8 +18,9 @@ local angleZ = 0.0
 
 ------------------------------------------------------ FUNCTIONS -------------------------------------------------------
 
-
--- Death Timer
+---------------------------------------------------------------------
+-- death timer
+---------------------------------------------------------------------
 local deathTimer = function()
     deathSecondsRemaining = Config.DeathTimer
 
@@ -34,7 +35,9 @@ local deathTimer = function()
     end)
 end
 
--- Drawtext for Countdown
+---------------------------------------------------------------------
+-- drawtext for countdown
+---------------------------------------------------------------------
 local DrawTxt = function(str, x, y, w, h, enableShadow, col1, col2, col3, a, centre)
     local string = CreateVarString(10, "LITERAL_STRING", str)
 
@@ -49,7 +52,9 @@ local DrawTxt = function(str, x, y, w, h, enableShadow, col1, col2, col3, a, cen
     DisplayText(string, x, y)
 end
 
--- Start Death Cam
+---------------------------------------------------------------------
+-- start death cam
+---------------------------------------------------------------------
 local StartDeathCam = function()
     ClearFocus()
 
@@ -63,7 +68,9 @@ local StartDeathCam = function()
     RenderScriptCams(true, true, 1000, true, false)
 end
 
--- End Death Cam
+---------------------------------------------------------------------
+-- dnd death cam
+---------------------------------------------------------------------
 local EndDeathCam = function()
     ClearFocus()
 
@@ -74,7 +81,9 @@ local EndDeathCam = function()
     deadcam = nil
 end
 
--- Update Death Cam Position
+---------------------------------------------------------------------
+-- update death cam position
+---------------------------------------------------------------------
 local ProcessNewPosition = function()
     local mouseX = 0.0
     local mouseY = 0.0
@@ -133,7 +142,9 @@ local ProcessNewPosition = function()
     return pos
 end
 
--- Process Camera Controls
+---------------------------------------------------------------------
+-- process camera controls
+---------------------------------------------------------------------
 local ProcessCamControls = function()
     local ped = PlayerPedId()
     local playerCoords = GetEntityCoords(ped)
@@ -151,7 +162,9 @@ local ProcessCamControls = function()
     Citizen.InvokeNative(0x948B39341C3A40C2, deadcam, playerCoords.x, playerCoords.y, playerCoords.z)
 end
 
--- Medic Call Delay
+---------------------------------------------------------------------
+-- medic call delay
+---------------------------------------------------------------------
 local MedicCalled = function()
     local delay = Config.MedicCallDelay * 1000
 
@@ -166,7 +179,9 @@ local MedicCalled = function()
     end)
 end
 
--- Set Closest Respawn
+---------------------------------------------------------------------
+-- set closest respawn
+---------------------------------------------------------------------
 local function SetClosestRespawn()
     local pos = GetEntityCoords(PlayerPedId(), true)
     local current = nil
@@ -195,8 +210,9 @@ end
 
 ------------------------------------------------------- THREADS --------------------------------------------------------
 
-
--- Prompts and Blips
+---------------------------------------------------------------------
+-- prompts and blips
+---------------------------------------------------------------------
 CreateThread(function()
     for i = 1, #Config.MedicJobLocations do
         local loc = Config.MedicJobLocations[i]
@@ -231,6 +247,11 @@ AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
         local ped = PlayerPedId()
         print('player health set')
         SetEntityHealth(ped, savedhealth, 0)
+        if Config.DisableRegeneration then
+            Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), 0.0)
+        else
+            Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), Config.RegenerationRate)
+        end
         TriggerEvent('rsg-medic:server:playerHealthUpdate')
     end)
 end)
@@ -243,7 +264,6 @@ AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
     while true do
         
         local ped = PlayerPedId()
-        Citizen.InvokeNative(0xC6258F41D86676E0, ped, 0, 100)
         local health = GetEntityHealth(ped)
         
         if health == 0 and deathactive == false then
@@ -256,19 +276,32 @@ AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
         end
 
         TriggerServerEvent('rsg-medic:server:SetHealth', health)
+        Wait(1)
+        
+    end
+
+end)
+
+---------------------------------------------------------------------
+-- player update health loop
+---------------------------------------------------------------------
+AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
+        
+    while true do
+        
+        local ped = PlayerPedId()
+        local health = GetEntityHealth(ped)
+        
+        TriggerServerEvent('rsg-medic:server:SetHealth', health)
         Wait(5000)
         
     end
 
-    if Config.DisableRegeneration then
-        Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), 0.0)
-    else
-        Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), Config.RegenerationRate)
-    end
-    
 end)
 
--- Display Respawn Message and Countdown
+---------------------------------------------------------------------
+-- display respawn message and countdown
+---------------------------------------------------------------------
 CreateThread(function()
     while true do
         local t = 1000
@@ -332,8 +365,9 @@ end)
 
 -------------------------------------------------------- EVENTS --------------------------------------------------------
 
-
--- Medic Menu
+---------------------------------------------------------------------
+-- medic menu
+---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
     local job = RSGCore.Functions.GetPlayerData().job.name
 
@@ -378,7 +412,9 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
     lib.showContext("medic_mainmenu")
 end)
 
--- Death Cam
+---------------------------------------------------------------------
+-- death cam
+---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:DeathCam', function()
     CreateThread(function()
         while true do
@@ -421,7 +457,9 @@ AddEventHandler('rsg-medic:client:DeathCam', function()
     end)
 end)
 
--- Get Medics On-Duty
+---------------------------------------------------------------------
+-- get medics on-duty
+---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:GetMedicsOnDuty', function()
     RSGCore.Functions.TriggerCallback('rsg-medic:server:getmedics', function(mediccount)
         medicsonduty = mediccount
@@ -463,7 +501,9 @@ AddEventHandler('rsg-medic:client:revive', function()
     end
 end)
 
--- Admin Revive
+---------------------------------------------------------------------
+-- admin revive
+---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:adminRevive', function(data)
     local player = data.id
     local pos = GetEntityCoords(player, true)
@@ -494,7 +534,9 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function(data)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
 end)
 
--- Player Revive
+---------------------------------------------------------------------
+-- player revive
+---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:playerRevive', function()
     local player = PlayerPedId()
     local pos = GetEntityCoords(player, true)
@@ -525,7 +567,9 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
 end)
 
--- Medic Supplies
+---------------------------------------------------------------------
+-- medic supplies
+---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:OpenMedicSupplies', function()
     local job = RSGCore.Functions.GetPlayerData().job.name
 
@@ -539,7 +583,9 @@ AddEventHandler('rsg-medic:client:OpenMedicSupplies', function()
     TriggerServerEvent("inventory:server:OpenInventory", "shop", "MedicSupplies_"..math.random(1, 99), ShopItems)
 end)
 
--- Medic Storage
+---------------------------------------------------------------------
+-- medic storage
+---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:storage', function()
     local job = RSGCore.Functions.GetPlayerData().job.name
     local stashloc = mediclocation
@@ -555,7 +601,9 @@ AddEventHandler('rsg-medic:client:storage', function()
     TriggerEvent("inventory:client:SetCurrentStash", stashloc)
 end)
 
--- Kill Player
+---------------------------------------------------------------------
+-- kill player
+---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:KillPlayer')
 AddEventHandler('rsg-medic:client:KillPlayer', function()
     local ped = PlayerPedId()
@@ -563,7 +611,9 @@ AddEventHandler('rsg-medic:client:KillPlayer', function()
     SetEntityHealth(ped, 0)
 end)
 
--- Cleanup
+---------------------------------------------------------------------
+-- cleanup
+---------------------------------------------------------------------
 AddEventHandler("onResourceStop", function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
 
