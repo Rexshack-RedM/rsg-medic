@@ -275,8 +275,7 @@ AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
             TriggerEvent('rsg-medic:client:DeathCam')
         end
 
-        TriggerServerEvent('rsg-medic:server:SetHealth', health)
-        Wait(1)
+        Wait(1000)
         
     end
 
