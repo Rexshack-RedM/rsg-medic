@@ -503,8 +503,9 @@ end)
 ---------------------------------------------------------------------
 -- admin revive
 ---------------------------------------------------------------------
-RegisterNetEvent('rsg-medic:client:adminRevive', function(data)
-    local player = data.id
+-- Admin Revive
+RegisterNetEvent('rsg-medic:client:adminRevive', function()
+    local player = PlayerPedId()
     local pos = GetEntityCoords(player, true)
 
     DoScreenFadeOut(500)
@@ -518,8 +519,8 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function(data)
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
-    TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
-    
+   
+
     -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
