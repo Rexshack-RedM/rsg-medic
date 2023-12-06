@@ -484,6 +484,7 @@ AddEventHandler('rsg-medic:client:revive', function()
         Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
         TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
         TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
+        TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
         TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
 
         -- Reset Death Timer
@@ -517,9 +518,9 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function()
     ClearPedBloodDamage(player)
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
-   
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
 
     -- Reset Death Timer
     deathactive = false
@@ -550,8 +551,9 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     ClearPedBloodDamage(player)
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
     Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
     TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
     
     -- Reset Death Timer
