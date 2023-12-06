@@ -504,7 +504,7 @@ end)
 -- admin revive
 ---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:adminRevive', function(data)
-    local player = data.id
+    local player = data
     local pos = GetEntityCoords(player, true)
 
     DoScreenFadeOut(500)
