@@ -395,7 +395,7 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
                 arrow = true
             },
             {   title = 'Medical Supplies', 
-                icon = 'fa-solid fa-pils',
+                icon = 'fa-solid fa-pills',
                 description = '',
                 event = 'rsg-medic:client:OpenMedicSupplies',
                 arrow = true
