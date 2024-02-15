@@ -12,8 +12,6 @@ Config.WipeCashOnRespawn        = false
 Config.MaxHealth                = 600
 Config.MedicReviveTime          = 5000
 Config.MedicTreatTime           = 5000
-Config.DisableRegeneration      = false -- enable/disable player health regenerations
-Config.RegenerationRate         = 0.1 -- player health regenerations rate
 Config.AddGPSRoute              = true
 Config.MedicCallDelay           = 60 -- delay in seconds before calling medic again
 
