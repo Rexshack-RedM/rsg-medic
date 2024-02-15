@@ -239,24 +239,6 @@ CreateThread(function()
 end)
 
 ---------------------------------------------------------------------
--- on player load / set health
----------------------------------------------------------------------
-AddEventHandler('RSGCore:Client:OnPlayerLoaded', function()
-    RSGCore.Functions.TriggerCallback('rsg-medic:server:getplayerhealth', function(savedhealth)
-        -- set intial health
-        local ped = PlayerPedId()
-        print('player health set')
-        SetEntityHealth(ped, savedhealth, 0)
-        if Config.DisableRegeneration then
-            Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), 0.0)
-        else
-            Citizen.InvokeNative(0x8899C244EBCF70DE, PlayerId(), Config.RegenerationRate)
-        end
-        TriggerEvent('rsg-medic:server:playerHealthUpdate')
-    end)
-end)
-
----------------------------------------------------------------------
 -- player dealth loop
 ---------------------------------------------------------------------
 AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
