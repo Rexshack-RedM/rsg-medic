@@ -1,5 +1,4 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-
 local createdEntries = {}
 local isLoggedIn = false
 local deathSecondsRemaining = 0
@@ -14,9 +13,6 @@ local Dead = false
 local deadcam = nil
 local angleY = 0.0
 local angleZ = 0.0
-
-
------------------------------------------------------- FUNCTIONS -------------------------------------------------------
 
 ---------------------------------------------------------------------
 -- death timer
@@ -69,7 +65,7 @@ local StartDeathCam = function()
 end
 
 ---------------------------------------------------------------------
--- dnd death cam
+-- end death cam
 ---------------------------------------------------------------------
 local EndDeathCam = function()
     ClearFocus()
@@ -207,9 +203,6 @@ local function SetClosestRespawn()
     end
 end
 
-
-------------------------------------------------------- THREADS --------------------------------------------------------
-
 ---------------------------------------------------------------------
 -- prompts and blips
 ---------------------------------------------------------------------
@@ -241,13 +234,10 @@ end)
 ---------------------------------------------------------------------
 -- player dealth loop
 ---------------------------------------------------------------------
-AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
-        
+CreateThread(function()
     while true do
-        
         local ped = PlayerPedId()
         local health = GetEntityHealth(ped)
-        
         if health == 0 and deathactive == false then
             exports.spawnmanager:setAutoSpawn(false)
             deathTimerStarted = true
@@ -256,28 +246,20 @@ AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
             TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
             TriggerEvent('rsg-medic:client:DeathCam')
         end
-
         Wait(1000)
-        
     end
-
 end)
 
 ---------------------------------------------------------------------
 -- player update health loop
 ---------------------------------------------------------------------
-AddEventHandler('rsg-medic:server:playerHealthUpdate', function()
-        
+CreateThread(function()
     while true do
-        
         local ped = PlayerPedId()
         local health = GetEntityHealth(ped)
-        
         TriggerServerEvent('rsg-medic:server:SetHealth', health)
         Wait(5000)
-        
     end
-
 end)
 
 ---------------------------------------------------------------------
@@ -591,7 +573,6 @@ end)
 RegisterNetEvent('rsg-medic:client:KillPlayer')
 AddEventHandler('rsg-medic:client:KillPlayer', function()
     local ped = PlayerPedId()
-
     SetEntityHealth(ped, 0)
 end)
 
