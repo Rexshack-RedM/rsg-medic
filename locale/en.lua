@@ -8,6 +8,7 @@ local Translations = {
     },
     success = {
         revived = 'You revived a person',
+        medic_called = 'Medic has been called!',
     },
     info = {
         revive_player_a = 'Revive A Player or Yourself (Admin Only)',

@@ -54,11 +54,10 @@ end
 local StartDeathCam = function()
     ClearFocus()
 
-    local ped = PlayerPedId()
-    local coords = GetEntityCoords(ped)
+    local coords = GetEntityCoords(cache.ped)
     local fov = GetGameplayCamFov()
 
-    deadcam = Citizen.InvokeNative(0x40C23491CE83708E, "DEFAULT_SCRIPTED_CAMERA", coords, 0, 0, 0, fov)
+    deadcam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", coords, 0, 0, 0, fov)
 
     SetCamActive(deadcam, true)
     RenderScriptCams(true, true, 1000, true, false)
@@ -83,7 +82,6 @@ end
 local ProcessNewPosition = function()
     local mouseX = 0.0
     local mouseY = 0.0
-    local ped = PlayerPedId()
 
     if IsInputDisabled(0) then
         mouseX = GetDisabledControlNormal(1, 0x6BC904FC) * 8.0
@@ -102,7 +100,7 @@ local ProcessNewPosition = function()
         angleY = -89.0
     end
 
-    local pCoords = GetEntityCoords(ped)
+    local pCoords = GetEntityCoords(cache.ped)
 
     local behindCam =
     {
@@ -142,20 +140,20 @@ end
 -- process camera controls
 ---------------------------------------------------------------------
 local ProcessCamControls = function()
-    local ped = PlayerPedId()
-    local playerCoords = GetEntityCoords(ped)
+
+    local playerCoords = GetEntityCoords(cache.ped)
 
     -- disable 1st person as the 1st person camera can cause some glitches
-    Citizen.InvokeNative(0x05AB44D906738426)
+    DisableOnFootFirstPersonViewThisUpdate()
 
     -- calculate new position
     local newPos = ProcessNewPosition()
 
     -- set coords of cam
-    Citizen.InvokeNative(0xF9EE7D419EE49DE6, deadcam, newPos.x, newPos.y, newPos.z)
+    SetCamCoord(deadcam, newPos.x, newPos.y, newPos.z)
 
     -- set rotation
-    Citizen.InvokeNative(0x948B39341C3A40C2, deadcam, playerCoords.x, playerCoords.y, playerCoords.z)
+    PointCamAtCoord(deadcam, playerCoords.x, playerCoords.y, playerCoords.z)
 end
 
 ---------------------------------------------------------------------
@@ -179,7 +177,7 @@ end
 -- set closest respawn
 ---------------------------------------------------------------------
 local function SetClosestRespawn()
-    local pos = GetEntityCoords(PlayerPedId(), true)
+    local pos = GetEntityCoords(cache.ped, true)
     local current = nil
     local dist = nil
 
@@ -220,11 +218,11 @@ CreateThread(function()
         createdEntries[#createdEntries + 1] = {type = "PROMPT", handle = loc.prompt}
 
         if loc.showblip then
-            local MedicBlip = Citizen.InvokeNative(0x554D9D53F696D002, 1664425300, loc.coords)
+            local MedicBlip = BlipAddForCoords(1664425300, loc.coords)
 
             SetBlipSprite(MedicBlip, GetHashKey(Config.Blip.blipSprite), true)
             SetBlipScale(MedicBlip, Config.Blip.blipScale)
-            Citizen.InvokeNative(0x9CB1A1623062F402, MedicBlip, Config.Blip.blipName)
+            SetBlipName(MedicBlip, Config.Blip.blipName)
 
             createdEntries[#createdEntries + 1] = {type = "BLIP", handle = MedicBlip}
         end
@@ -236,8 +234,7 @@ end)
 ---------------------------------------------------------------------
 CreateThread(function()
     while true do
-        local ped = PlayerPedId()
-        local health = GetEntityHealth(ped)
+        local health = GetEntityHealth(cache.ped)
         if health == 0 and deathactive == false then
             exports.spawnmanager:setAutoSpawn(false)
             deathTimerStarted = true
@@ -255,8 +252,7 @@ end)
 ---------------------------------------------------------------------
 CreateThread(function()
     while true do
-        local ped = PlayerPedId()
-        local health = GetEntityHealth(ped)
+        local health = GetEntityHealth(cache.ped)
         TriggerServerEvent('rsg-medic:server:SetHealth', health)
         Wait(5000)
     end
@@ -308,7 +304,13 @@ CreateThread(function()
 
                 TriggerServerEvent('rsg-medic:server:medicAlert', text)
 
-                RSGCore.Functions.Notify('Medic has been called!', 'success', 5000)
+                lib.notify({
+                    title = 'Medic has been called!',
+                    type = 'success',
+                    icon = 'fa-solid fa-kit-medical',
+                    iconAnimation = 'shake',
+                    duration = 7000
+                })
 
                 MedicCalled()
 
@@ -335,8 +337,13 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
     local job = RSGCore.Functions.GetPlayerData().job.name
 
     if job ~= Config.JobRequired then
-        RSGCore.Functions.Notify('You are not a Medic!', 'error')
-
+        lib.notify({
+            title = 'You are not a Medic!',
+            type = 'error',
+            icon = 'fa-solid fa-kit-medical',
+            iconAnimation = 'shake',
+            duration = 7000
+        })
         return
     end
 
@@ -433,8 +440,6 @@ end)
 AddEventHandler('rsg-medic:client:revive', function()
     SetClosestRespawn()
 
-    local player = PlayerPedId()
-
     if deathactive then
         DoScreenFadeOut(500)
 
@@ -442,10 +447,10 @@ AddEventHandler('rsg-medic:client:revive', function()
 
         local respawnPos = Config.RespawnLocations[closestRespawn].coords
         NetworkResurrectLocalPlayer(respawnPos, true, false)
-        SetEntityInvincible(player, false)
-        ClearPedBloodDamage(player)
-        Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
-        Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
+        SetEntityInvincible(cache.ped, false)
+        ClearPedBloodDamage(cache.ped)
+        SetAttributeCoreValue(cache.ped, 0, 100)
+        SetAttributeCoreValue(cache.ped, 1, 100)
         TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
         TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
         TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
@@ -471,17 +476,17 @@ end)
 -- Admin Revive
 RegisterNetEvent('rsg-medic:client:adminRevive', function()
     local player = PlayerPedId()
-    local pos = GetEntityCoords(player, true)
+    local pos = GetEntityCoords(cache.ped, true)
 
     DoScreenFadeOut(500)
 
     Wait(1000)
 
     NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
-    SetEntityInvincible(player, false)
-    ClearPedBloodDamage(player)
-    Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
-    Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
+    SetEntityInvincible(cache.ped, false)
+    ClearPedBloodDamage(cache.ped)
+    SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
+    SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
@@ -503,18 +508,18 @@ end)
 -- player revive
 ---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:playerRevive', function()
-    local player = PlayerPedId()
-    local pos = GetEntityCoords(player, true)
+
+    local pos = GetEntityCoords(cache.ped, true)
 
     DoScreenFadeOut(500)
 
     Wait(1000)
 
-    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
-    SetEntityInvincible(player, false)
-    ClearPedBloodDamage(player)
-    Citizen.InvokeNative(0xC6258F41D86676E0, player, 0, 100) -- SetAttributeCoreValue
-    Citizen.InvokeNative(0xC6258F41D86676E0, player, 1, 100) -- SetAttributeCoreValue
+    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
+    SetEntityInvincible(cache.ped, false)
+    ClearPedBloodDamage(cache.ped)
+    SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
+    SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
@@ -572,8 +577,7 @@ end)
 ---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:KillPlayer')
 AddEventHandler('rsg-medic:client:KillPlayer', function()
-    local ped = PlayerPedId()
-    SetEntityHealth(ped, 0)
+    SetEntityHealth(cache.ped, 0)
 end)
 
 ---------------------------------------------------------------------
