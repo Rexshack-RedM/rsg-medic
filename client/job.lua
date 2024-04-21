@@ -38,7 +38,7 @@ AddEventHandler('rsg-medic:client:ToggleDuty', function()
 
         if PlayerJob.name ~= Config.JobRequired then
             lib.notify({
-                title = Lang:t('error.not_medic'),
+                title = Lang:t('client.lang_15'),
                 type = 'error',
                 icon = 'fa-solid fa-kit-medical',
                 iconAnimation = 'shake',
@@ -57,7 +57,7 @@ AddEventHandler('rsg-medic:client:RevivePlayer', function()
 
     if not hasItem then
         lib.notify({
-            title = Lang:t('error.no_firstaid'),
+            title = Lang:t('client.lang_16'),
             type = 'error',
             icon = 'fa-solid fa-kit-medical',
             iconAnimation = 'shake',
@@ -70,7 +70,7 @@ AddEventHandler('rsg-medic:client:RevivePlayer', function()
 
     if player == -1 or distance >= 5.0 then
         lib.notify({
-            title = Lang:t('error.no_player'),
+            title = Lang:t('client.lang_17'),
             type = 'error',
             icon = 'fa-solid fa-kit-medical',
             iconAnimation = 'shake',
@@ -103,7 +103,7 @@ AddEventHandler('rsg-medic:client:RevivePlayer', function()
             move = true,
             mouse = false,
         },
-        label = 'Reviving...',
+        label = Lang:t('client.lang_18'),
     })
 
     ClearPedTasks(cache.ped)
@@ -119,7 +119,7 @@ AddEventHandler('rsg-medic:client:TreatWounds', function()
 
     if not hasItem then
         lib.notify({
-            title = Lang:t('error.no_bandage'),
+            title = Lang:t('client.lang_19'),
             type = 'error',
             icon = 'fa-solid fa-kit-medical',
             iconAnimation = 'shake',
@@ -132,7 +132,7 @@ AddEventHandler('rsg-medic:client:TreatWounds', function()
 
     if player == -1 or distance >= 5.0 then
         lib.notify({
-            title = Lang:t('error.no_player'),
+            title = Lang:t('client.lang_20'),
             type = 'error',
             icon = 'fa-solid fa-kit-medical',
             iconAnimation = 'shake',
@@ -166,7 +166,7 @@ AddEventHandler('rsg-medic:client:TreatWounds', function()
             move = true,
             mouse = false,
         },
-        label = 'Treating Wounds...',
+        label = Lang:t('client.lang_21'),
     })
 
     ClearPedTasks(cache.ped)
@@ -221,7 +221,7 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
             transG = transG - 1
 
             if Config.Debug then
-                print('Distance to Player Blip: '..tostring(distance)..' metres')
+                print(Lang:t('client.lang_22')..tostring(distance)..Lang:t('client.lang_23'))
             end
 
             if transG <= 0 or distance < 5.0 then
@@ -232,8 +232,8 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
                     if coords == bcoords then
                         if Config.Debug then
                             print('')
-                            print('Blip Coords: '..tostring(bcoords))
-                            print('Blip Removed: '..tostring(blipEntries[i].handle))
+                            print(Lang:t('client.lang_24')..tostring(bcoords))
+                            print(Lang:t('client.lang_25')..tostring(blipEntries[i].handle))
                             print('')
                         end
 

@@ -208,7 +208,7 @@ CreateThread(function()
     for i = 1, #Config.MedicJobLocations do
         local loc = Config.MedicJobLocations[i]
 
-        exports['rsg-core']:createPrompt(loc.prompt, loc.coords, RSGCore.Shared.Keybinds['J'], 'Open '..loc.name,
+        exports['rsg-core']:createPrompt(loc.prompt, loc.coords, RSGCore.Shared.Keybinds['J'], Lang:t('client.lang_1')..loc.name,
         {
             type = 'client',
             event = 'rsg-medic:client:mainmenu',
@@ -269,18 +269,18 @@ CreateThread(function()
             t = 4
 
             if deathTimerStarted and deathSecondsRemaining > 0 then
-                DrawTxt('RESPAWN IN '..deathSecondsRemaining..' SECONDS..', 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                DrawTxt(Lang:t('client.lang_2')..deathSecondsRemaining..Lang:t('client.lang_3'), 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
 
             if deathTimerStarted and deathSecondsRemaining == 0 and medicsonduty == 0 then
-                DrawTxt('PRESS [E] TO RESPAWN', 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                DrawTxt(Lang:t('client.lang_4'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
 
             if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty > 0 and not medicCalled then
                 if deathSecondsRemaining == 0 then
-                    DrawTxt('PRESS [E] TO RESPAWN - PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                    DrawTxt(Lang:t('client.lang_5'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
                 else
-                    DrawTxt('PRESS [J] TO CALL FOR ASSISTANCE', 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                    DrawTxt(Lang:t('client.lang_6'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
                 end
             end
 
@@ -300,12 +300,12 @@ CreateThread(function()
                     goto continue
                 end
 
-                local text = 'A person needs medical help!'
+                local text = Lang:t('client.lang_7')
 
                 TriggerServerEvent('rsg-medic:server:medicAlert', text)
 
                 lib.notify({
-                    title = 'Medic has been called!',
+                    title = Lang:t('client.lang_8'),
                     type = 'success',
                     icon = 'fa-solid fa-kit-medical',
                     iconAnimation = 'shake',
@@ -338,7 +338,7 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
 
     if job ~= Config.JobRequired then
         lib.notify({
-            title = 'You are not a Medic!',
+            title = Lang:t('client.lang_9'),
             type = 'error',
             icon = 'fa-solid fa-kit-medical',
             iconAnimation = 'shake',
@@ -353,25 +353,25 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
         id = "medic_mainmenu",
         title = name,
         options = {
-             {   title = 'Manage employees',
+             {   title = Lang:t('client.lang_10'),
                 icon = 'fa-solid fa-list',
-                description = 'Manage employees and business',
+                description = Lang:t('client.lang_11'),
                 event = 'rsg-bossmenu:client:mainmenu',
                 isBoss = true
             }, 
-            {   title = 'Toggle Duty',
+            {   title = Lang:t('client.lang_12'),
                 icon = 'fa-solid fa-shield-heart',
                 description = '',
                 event = 'rsg-medic:client:ToggleDuty',
                 arrow = true
             },
-            {   title = 'Medical Supplies', 
+            {   title = Lang:t('client.lang_13'), 
                 icon = 'fa-solid fa-pills',
                 description = '',
                 event = 'rsg-medic:client:OpenMedicSupplies',
                 arrow = true
             },
-            {   title = 'Medic Storage',
+            {   title = Lang:t('client.lang_14'),
                 icon = 'fa-solid fa-box-open',
                 description = '',
                 event = 'rsg-medic:client:storage',
