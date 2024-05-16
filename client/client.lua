@@ -251,10 +251,11 @@ end)
 -- player update health loop
 ---------------------------------------------------------------------
 CreateThread(function()
+    repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
     while true do
         local health = GetEntityHealth(cache.ped)
         TriggerServerEvent('rsg-medic:server:SetHealth', health)
-        Wait(5000)
+        Wait(1000)
     end
 end)
 
