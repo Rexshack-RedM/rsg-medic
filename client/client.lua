@@ -230,7 +230,7 @@ CreateThread(function()
 end)
 
 ---------------------------------------------------------------------
--- player dealth loop
+-- player death loop
 ---------------------------------------------------------------------
 CreateThread(function()
     while true do
@@ -463,9 +463,11 @@ AddEventHandler('rsg-medic:client:revive', function()
         medicCalled = false
         deathSecondsRemaining = 0
 
-        Wait(1500)
-
-        DoScreenFadeIn(1800)
+        AnimpostfxPlay("Title_Gen_FewHoursLater", 0, false)
+        Wait(3000)
+        DoScreenFadeIn(2000)
+        AnimpostfxPlay("PlayerWakeUpInterrogation", 0, false)
+        Wait(19000)
 
         TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
     end
