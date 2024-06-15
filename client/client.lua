@@ -233,6 +233,7 @@ end)
 -- player death loop
 ---------------------------------------------------------------------
 CreateThread(function()
+    repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
     while true do
         local health = GetEntityHealth(cache.ped)
         if health == 0 and deathactive == false then
