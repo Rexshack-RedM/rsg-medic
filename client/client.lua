@@ -109,7 +109,7 @@ local ProcessNewPosition = function()
         z = pCoords.z + ((Sin(angleY))) * (0.5 + 0.5)
     }
 
-    local rayHandle = StartShapeTestRay(pCoords.x, pCoords.y, pCoords.z + 0.5, behindCam.x, behindCam.y, behindCam.z, -1, ped, 0)
+    local rayHandle = StartShapeTestRay(pCoords.x, pCoords.y, pCoords.z + 0.5, behindCam.x, behindCam.y, behindCam.z, -1, cache.ped, 0)
 
     local _, hitBool, hitCoords, _, _ = GetShapeTestResult(rayHandle)
 
