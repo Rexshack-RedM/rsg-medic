@@ -1,4 +1,5 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
+local sharedWeapons = exports['rsg-core']:GetWeapons()
 local createdEntries = {}
 local isLoggedIn = false
 local deathSecondsRemaining = 0
@@ -157,6 +158,28 @@ local ProcessCamControls = function()
 end
 
 ---------------------------------------------------------------------
+-- dealth log
+---------------------------------------------------------------------
+local deathLog = function()
+    local player = PlayerId()
+    local ped = PlayerPedId()
+    local killer, killerWeapon = NetworkGetEntityKillerOfPlayer(player)
+
+    if killer == ped or killer == -1 then return end
+
+    local killerId = NetworkGetPlayerIndexFromPed(killer)
+    local killerName = GetPlayerName(killerId) .. " ("..GetPlayerServerId(killerId)..")"
+    local weaponLabel = 'Unknown'
+    local weaponName = 'Unknown'
+    local weaponItem = sharedWeapons[killerWeapon]
+    if weaponItem then
+        weaponLabel = weaponItem.label
+        weaponName = weaponItem.name
+    end
+    TriggerServerEvent('rsg-log:server:CreateLog', 'death', Lang:t('logs.death_log_title', {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)}), 'red', Lang:t('logs.death_log_message', {killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName}))
+end
+
+---------------------------------------------------------------------
 -- medic call delay
 ---------------------------------------------------------------------
 local MedicCalled = function()
@@ -240,6 +263,7 @@ CreateThread(function()
             exports.spawnmanager:setAutoSpawn(false)
             deathTimerStarted = true
             deathTimer()
+            deathLog()
             deathactive = true
             TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
             TriggerEvent('rsg-medic:client:DeathCam')

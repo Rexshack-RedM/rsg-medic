@@ -40,6 +40,11 @@ local Translations = {
         lang_9 = 'You are not a medic',
     },
 
+    logs = {
+        death_log_title = "%{playername} (%{playerid}) is dead",
+        death_log_message = "%{killername} has killed %{playername} with a **%{weaponlabel}** (%{weaponname})",
+    }
+
 }
 
 Lang = Locale:new({
