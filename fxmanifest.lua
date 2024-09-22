@@ -3,7 +3,7 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 game 'rdr3'
 
 description 'rsg-medic'
-version '1.2.0'
+version '1.2.1'
 
 client_scripts {
     'client/client.lua',
@@ -13,6 +13,7 @@ client_scripts {
 server_scripts {
     'server/server.lua',
     '@oxmysql/lib/MySQL.lua',
+    'server/versionchecker.lua'
 }
 
 shared_scripts {
