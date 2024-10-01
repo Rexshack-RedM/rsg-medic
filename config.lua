@@ -29,13 +29,6 @@ Config.MedicJobLocations =
     {name = 'Valentine Medic', prompt = 'valmedic', coords = vector3(-287.59, 811.28, 119.39 -0.8), showblip = true} -- Valentine
 }
 
--- Medic Supplies
-Config.MedicSupplies =
-{
-    [1] = {name = "bandage", price = 0, amount = 500, info = {}, type = "item", slot = 1},
-    [2] = {name = "firstaid", price = 0, amount = 500, info = {}, type = "item", slot = 2}
-}
-
 -- Respawn Locations
 Config.RespawnLocations =
 {

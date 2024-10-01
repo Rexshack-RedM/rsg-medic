@@ -571,17 +571,12 @@ end)
 ---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:OpenMedicSupplies', function()
     local job = RSGCore.Functions.GetPlayerData().job.name
-
     if job ~= Config.JobRequired then return end
-
-    local ShopItems = {}
-    ShopItems.label = "Medic Supplies"
-    ShopItems.items = Config.MedicSupplies
-    ShopItems.slots = #Config.MedicSupplies
-
-    TriggerServerEvent("inventory:server:OpenInventory", "shop", "MedicSupplies_"..math.random(1, 99), ShopItems)
+    TriggerServerEvent('rsg-shops:server:openstore', 'medic', 'medic', 'Medical Supplies')
 end)
 
+--[[
+need to update this
 ---------------------------------------------------------------------
 -- medic storage
 ---------------------------------------------------------------------
@@ -599,6 +594,7 @@ AddEventHandler('rsg-medic:client:storage', function()
 
     TriggerEvent("inventory:client:SetCurrentStash", stashloc)
 end)
+--]]
 
 ---------------------------------------------------------------------
 -- kill player
