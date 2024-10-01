@@ -575,26 +575,15 @@ AddEventHandler('rsg-medic:client:OpenMedicSupplies', function()
     TriggerServerEvent('rsg-shops:server:openstore', 'medic', 'medic', 'Medical Supplies')
 end)
 
---[[
-need to update this
 ---------------------------------------------------------------------
 -- medic storage
 ---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:storage', function()
     local job = RSGCore.Functions.GetPlayerData().job.name
     local stashloc = mediclocation
-
     if job ~= Config.JobRequired then return end
-
-    TriggerServerEvent("inventory:server:OpenInventory", "stash", stashloc,
-    {
-        maxweight = Config.StorageMaxWeight,
-        slots = Config.StorageMaxSlots,
-    })
-
-    TriggerEvent("inventory:client:SetCurrentStash", stashloc)
+    TriggerServerEvent('rsg-medic:server:openstash', stashloc)
 end)
---]]
 
 ---------------------------------------------------------------------
 -- kill player

@@ -147,3 +147,18 @@ RSGCore.Functions.CreateCallback('rsg-medic:server:getmedics', function(source, 
     end
     cb(amount)
 end)
+
+---------------------------------
+-- medic stash
+---------------------------------
+RegisterNetEvent('rsg-medic:server:openstash', function(location)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player then return end
+    local data = {
+        maxweight = Config.StorageMaxWeight,
+        slots = Config.StorageMaxSlots
+    }
+    local stashName = 'medic_' .. location
+    exports['rsg-inventory']:OpenInventory(src, stashName, data)
+end)
