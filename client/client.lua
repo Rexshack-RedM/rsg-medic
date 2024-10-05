@@ -600,38 +600,43 @@ end)
 RegisterNetEvent('rsg-medic:client:usebandage', function()
     if isBusy then return end
     local hasItem = RSGCore.Functions.HasItem('bandage', 1)
-    if hasItem then
-        isBusy = true
-        LocalPlayer.state:set('inv_busy', true, true)
-        SetCurrentPedWeapon(cache.ped, GetHashKey('weapon_unarmed'))
-        lib.progressBar({
-            duration = Config.BandageTime,
-            position = 'bottom',
-            useWhileDead = false,
-            canCancel = false,
-            disableControl = true,
-            disable = {
-                move = true,
-                mouse = true,
-            },
-            anim = {
-                dict = 'mini_games@story@mob4@heal_jules@bandage@arthur',
-                clip = 'bandage_fast',
-                flag = 1,
-            },
-            label = 'Applying Bandage',
-        })
-        local currenthealth = GetEntityHealth(cache.ped)
-        local newhealth = (currenthealth + Config.BandageHealth)
-        if newhealth > 600 then
-            newhealth = 600
+    local PlayerData = RSGCore.Functions.GetPlayerData()
+    if not PlayerData.metadata['isdead'] and not PlayerData.metadata['ishandcuffed'] then
+        if hasItem then
+            isBusy = true
+            LocalPlayer.state:set('inv_busy', true, true)
+            SetCurrentPedWeapon(cache.ped, GetHashKey('weapon_unarmed'))
+            lib.progressBar({
+                duration = Config.BandageTime,
+                position = 'bottom',
+                useWhileDead = false,
+                canCancel = false,
+                disableControl = true,
+                disable = {
+                    move = true,
+                    mouse = true,
+                },
+                anim = {
+                    dict = 'mini_games@story@mob4@heal_jules@bandage@arthur',
+                    clip = 'bandage_fast',
+                    flag = 1,
+                },
+                label = 'Applying Bandage',
+            })
+            local currenthealth = GetEntityHealth(cache.ped)
+            local newhealth = (currenthealth + Config.BandageHealth)
+            if newhealth > 600 then
+                newhealth = 600
+            end
+            SetEntityHealth(cache.ped, newhealth)
+            TriggerServerEvent('rsg-medic:server:removeitem', 'bandage', 1)
+            LocalPlayer.state:set('inv_busy', false, true)
+            isBusy = false
+        else
+            lib.notify({ title = 'Error', 'you don\'t have any bandages!', type = 'error', duration = 5000 })
         end
-        SetEntityHealth(cache.ped, newhealth)
-        TriggerServerEvent('rsg-medic:server:removeitem', 'bandage', 1)
-        LocalPlayer.state:set('inv_busy', false, true)
-        isBusy = false
     else
-        lib.notify({ title = 'Error', 'you don\'t have any bandages!', type = 'error', duration = 5000 })
+        lib.notify({ title = 'Error', 'not able to do that right now!', type = 'error', duration = 5000 })
     end
 end)
 
