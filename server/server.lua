@@ -1,5 +1,13 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 
+-----------------------
+-- use bandage
+-----------------------
+RSGCore.Functions.CreateUseableItem('bandage', function(source, item)
+    local src = source
+    TriggerClientEvent('rsg-medic:client:usebandage', src, item.name)
+end)
+
 -- Admin Revive Player
 RSGCore.Commands.Add("revive", Lang:t('server.lang_1'), {{name = "id", help = Lang:t('server.lang_2')}}, false, function(source, args)
     local src = source
@@ -158,4 +166,15 @@ RegisterNetEvent('rsg-medic:server:openstash', function(location)
     local data = { label = 'Medic Storage', maxweight = Config.StorageMaxWeight, slots = Config.StorageMaxSlots }
     local stashName = 'medic_' .. location
     exports['rsg-inventory']:OpenInventory(src, stashName, data)
+end)
+
+---------------------------------
+-- remove item
+---------------------------------
+RegisterServerEvent('rsg-medic:server:removeitem', function(item, amount)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player then return end
+    Player.Functions.RemoveItem(item, amount)
+    TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[item], 'remove', amount)
 end)

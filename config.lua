@@ -14,6 +14,8 @@ Config.MedicReviveTime          = 5000
 Config.MedicTreatTime           = 5000
 Config.AddGPSRoute              = true
 Config.MedicCallDelay           = 60 -- delay in seconds before calling medic again
+Config.BandageTime              = 10000
+Config.BandageHealth            = 100
 
 -- Blip Settings
 Config.Blip =
