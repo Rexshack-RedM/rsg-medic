@@ -187,7 +187,7 @@ end)
 
 -- Medic Alert
 RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
-    RSGCore.Functions.Notify(text, 'medic', 5000)
+    lib.notify({ title = 'Info', description = text, type = 'info', duration = 7000 })
 
     local blip = BlipAddForCoords(1664425300, coords.x, coords.y, coords.z)
     local blip2 = BlipAddForCoords(1664425300, coords.x, coords.y, coords.z)
