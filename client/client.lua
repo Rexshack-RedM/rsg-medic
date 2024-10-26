@@ -292,7 +292,6 @@ CreateThread(function()
 
             if deathTimerStarted and deathSecondsRemaining > 0 then
                 DrawTxt(locale('cl_respawn') .. deathSecondsRemaining .. locale('cl_seconds'), 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
-                -- DrawTxt('PULSA [E] PARA REAPARECER '..deathSecondsRemaining..' s.. \n PULSE [J] PARA LLAMAR AL DOCTOR \n O PUEDE UTILIZAR /HELP', 0.50, 0.80, 0.5, 0.5, true, 255, 255, 255, 200, true)
             end
 
             if deathTimerStarted and deathSecondsRemaining == 0 and medicsonduty == 0 then
@@ -302,7 +301,6 @@ CreateThread(function()
             if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty > 0 and not medicCalled then
                 if deathSecondsRemaining == 0 then
                     DrawTxt(locale('cl_press_respawn_b'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
-                    -- DrawTxt('PULSA [E] PARA REAPARECER '..deathSecondsRemaining..' s \n PULSE [J] PARA LLAMAR AL DOCTOR', 0.50, 1.0, 0.5, 0.5, true, 255, 255, 255, 200, true) -- White text
                 else
                     DrawTxt(locale('cl_press_assistance'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
                 end
