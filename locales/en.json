@@ -45,9 +45,4 @@
     "sv_lost_goldcoin" : "you lost all your goldcoin!",
     "sv_not_medic" : "You are not a Medic!",
 
-    "discord_priv" : "Medic | PLAYER DEATH",
-    "discord_public" : "Info | PLAYER DEATH",
-
-    "discord_end" : "Medics for RSG Framework",
-    "discord_end_p" : "Players for RSG Framework"
 }
