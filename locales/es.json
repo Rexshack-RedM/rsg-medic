@@ -43,11 +43,5 @@
     "sv_lost_bloodmoney" : "¡perdiste todo tu dinero de sangre!",
     "sv_lost_exp" : "¡perdiste toda tu experiencia!",
     "sv_lost_goldcoin" : "¡perdiste todas tus monedas de oro!",
-    "sv_not_medic" : "¡No eres médico!",
-
-    "discord_priv" : "Médico | MUERTE DEL JUGADOR",
-    "discord_public" : "Información | MUERTE DEL JUGADOR",
-
-    "discord_end" : "Médicos para RSG Framework",
-    "discord_end_p" : "Jugadores para RSG Framework"
+    "sv_not_medic" : "¡No eres médico!"
 }
