@@ -77,14 +77,6 @@ RegisterNetEvent('rsg-medic:server:deathactions', function()
         Player.Functions.SetMoney('bloodmoney', 0)
         TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_bloodmoney'), type = 'info', duration = 7000 })
     end
-    if Config.WipeExperienceOnRespawn then
-        Player.Functions.SetMoney('experience', 0)
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_exp'), type = 'info', duration = 7000 })
-    end
-    if Config.WipeGoldcoinOnRespawn then
-        Player.Functions.SetMoney('goldcoin', 0)
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_goldcoin'), type = 'info', duration = 7000 })
-    end
 end)
 
 -- Get Players Health

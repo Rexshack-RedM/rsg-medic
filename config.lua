@@ -45,11 +45,3 @@ Config.RespawnLocations =
     [8] = {coords = vector4(3033.01, 433.82, 63.81, 65.9)}, -- Van Horn
     [9] = {coords = vector4(3016.71, 1345.64, 42.69, 67.85)} -- Annesburg
 }
-
--------------------------
--- EXTRA Webhooks / RANKING
------------------------
-Config.Webhooks = {
-    ["death"] = "https://discord.com/api/webhooks/1256633774792376381/iQPXkaWrDKQX3IqeAWMXPlcBemuKIA0iDQ0BHxjH4S77Sm17Yh2GbkO8LTBWwHh0fU03",
-    ["deathic"] = "https://discord.com/api/webhooks/1265079725643010079/ARvEiPzyhUjhN1wnXVheG9e9RGdiS3IiQUUrK-W800uU6k15rIOBM74X0LIRiAVLkgEx",
-}
