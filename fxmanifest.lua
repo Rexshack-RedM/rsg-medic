@@ -5,23 +5,23 @@ game 'rdr3'
 description 'rsg-medic'
 version '1.2.8'
 
+shared_scripts {
+    '@ox_lib/init.lua',
+    'config.lua',
+}
+
 client_scripts {
     'client/client.lua',
     'client/job.lua',
 }
 
 server_scripts {
-    'server/server.lua',
     '@oxmysql/lib/MySQL.lua',
-    'server/versionchecker.lua'
+    'server/*.lua',
 }
 
-shared_scripts {
-    '@ox_lib/init.lua',
-    '@rsg-core/shared/locale.lua',
-    'locale/en.lua',
-    'locale/*.lua',
-    'config.lua',
+files {
+    'locales/*.json'
 }
 
 dependencies {
