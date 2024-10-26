@@ -1,5 +1,6 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local sharedWeapons = exports['rsg-core']:GetWeapons()
+lib.locale()
 local createdEntries = {}
 local isLoggedIn = false
 local deathSecondsRemaining = 0
@@ -21,13 +22,10 @@ local isBusy = false
 ---------------------------------------------------------------------
 local deathTimer = function()
     deathSecondsRemaining = Config.DeathTimer
-
     CreateThread(function()
         while deathSecondsRemaining > 0 do
             Wait(1000)
-
             deathSecondsRemaining = deathSecondsRemaining - 1
-
             TriggerEvent("rsg-medic:client:GetMedicsOnDuty")
         end
     end)
@@ -177,7 +175,9 @@ local deathLog = function()
         weaponLabel = weaponItem.label
         weaponName = weaponItem.name
     end
-    TriggerServerEvent('rsg-log:server:CreateLog', 'death', Lang:t('logs.death_log_title', {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)}), 'red', Lang:t('logs.death_log_message', {killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName}))
+    local msgDiscordA = locale('cl_death_log_title', {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)})
+    local msgDiscordB = locale('cl_death_log_message', { killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName})
+    TriggerServerEvent('rsg-medic:server:sendToDiscord', msgDiscordA, msgDiscordB)
 end
 
 ---------------------------------------------------------------------
@@ -185,13 +185,10 @@ end
 ---------------------------------------------------------------------
 local MedicCalled = function()
     local delay = Config.MedicCallDelay * 1000
-
     CreateThread(function()
         while true do
             Wait(delay)
-
             medicCalled = false
-
             return
         end
     end)
@@ -232,7 +229,7 @@ CreateThread(function()
     for i = 1, #Config.MedicJobLocations do
         local loc = Config.MedicJobLocations[i]
 
-        exports['rsg-core']:createPrompt(loc.prompt, loc.coords, RSGCore.Shared.Keybinds['J'], Lang:t('client.lang_1')..loc.name,
+        exports['rsg-core']:createPrompt(loc.prompt, loc.coords, RSGCore.Shared.Keybinds['J'], locale('cl_open') .. loc.name,
         {
             type = 'client',
             event = 'rsg-medic:client:mainmenu',
@@ -243,7 +240,6 @@ CreateThread(function()
 
         if loc.showblip then
             local MedicBlip = BlipAddForCoords(1664425300, loc.coords)
-
             SetBlipSprite(MedicBlip, GetHashKey(Config.Blip.blipSprite), true)
             SetBlipScale(MedicBlip, Config.Blip.blipScale)
             SetBlipName(MedicBlip, Config.Blip.blipName)
@@ -296,18 +292,18 @@ CreateThread(function()
             t = 4
 
             if deathTimerStarted and deathSecondsRemaining > 0 then
-                DrawTxt(Lang:t('client.lang_2')..deathSecondsRemaining..Lang:t('client.lang_3'), 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                DrawTxt(locale('cl_respawn') .. deathSecondsRemaining .. locale('cl_seconds'), 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
 
             if deathTimerStarted and deathSecondsRemaining == 0 and medicsonduty == 0 then
-                DrawTxt(Lang:t('client.lang_4'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                DrawTxt(locale('cl_press_respawn'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
             end
 
             if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty > 0 and not medicCalled then
                 if deathSecondsRemaining == 0 then
-                    DrawTxt(Lang:t('client.lang_5'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                    DrawTxt(locale('cl_press_respawn_b'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
                 else
-                    DrawTxt(Lang:t('client.lang_6'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                    DrawTxt(locale('cl_press_assistance'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
                 end
             end
 
@@ -318,7 +314,7 @@ CreateThread(function()
                 TriggerServerEvent('rsg-medic:server:deathactions')
             end
 
-            if deathactive and deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and IsControlPressed(0, RSGCore.Shared.Keybinds['J']) and not medicCalled then
+            if deathactive and deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and IsControlPressed(0, RSGCore.Shared.Keybinds['G']) and not medicCalled then
                 medicCalled = true
 
                 if medicsonduty == 0 then
@@ -327,17 +323,11 @@ CreateThread(function()
                     goto continue
                 end
 
-                local text = Lang:t('client.lang_7')
+                local text = locale('cl_medical_help')
 
                 TriggerServerEvent('rsg-medic:server:medicAlert', text)
 
-                lib.notify({
-                    title = Lang:t('client.lang_8'),
-                    type = 'success',
-                    icon = 'fa-solid fa-kit-medical',
-                    iconAnimation = 'shake',
-                    duration = 7000
-                })
+                lib.notify({ title = locale('cl_medical_called'), type = 'success', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
 
                 MedicCalled()
 
@@ -362,15 +352,8 @@ end)
 ---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
     local job = RSGCore.Functions.GetPlayerData().job.name
-
     if job ~= Config.JobRequired then
-        lib.notify({
-            title = Lang:t('client.lang_9'),
-            type = 'error',
-            icon = 'fa-solid fa-kit-medical',
-            iconAnimation = 'shake',
-            duration = 7000
-        })
+        lib.notify({ title = locale('cl_not_medic'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
         return
     end
 
@@ -380,27 +363,26 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
         id = "medic_mainmenu",
         title = name,
         options = {
-             {   title = Lang:t('client.lang_10'),
+             {   title = locale('cl_employees'),
                 icon = 'fa-solid fa-list',
-                description = Lang:t('client.lang_11'),
+                description = locale('cl_employees_b'),
                 event = 'rsg-bossmenu:client:mainmenu',
                 isBoss = true
-            }, 
-            {   title = Lang:t('client.lang_12'),
+            },
+            {   title = locale('cl_duty'),
                 icon = 'fa-solid fa-shield-heart',
-                description = '',
                 event = 'rsg-medic:client:ToggleDuty',
                 arrow = true
             },
-            {   title = Lang:t('client.lang_13'), 
+            {   title = locale('cl_medical_supplies'),
                 icon = 'fa-solid fa-pills',
-                description = '',
-                event = 'rsg-medic:client:OpenMedicSupplies',
+                onSelect = function()
+                    TriggerServerEvent('rsg-shops:server:openstore', 'MedicSupplies', 'MedicSupplies', locale('cl_medical_supplies'))
+                end,
                 arrow = true
             },
-            {   title = Lang:t('client.lang_14'),
+            {   title = locale('cl_medical_storage'),
                 icon = 'fa-solid fa-box-open',
-                description = '',
                 event = 'rsg-medic:client:storage',
                 arrow = true
             },
@@ -419,19 +401,15 @@ AddEventHandler('rsg-medic:client:DeathCam', function()
 
             if not Dead and deathactive then
                 Dead = true
-
                 StartDeathCam()
             elseif Dead and not deathactive then
                 Dead = false
-
                 EndDeathCam()
             end
 
             if deathSecondsRemaining <= 0 and not deathactive then
                 Dead = false
-
                 EndDeathCam()
-
                 return
             end
         end
@@ -553,7 +531,7 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
     TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
-    
+
     -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
@@ -568,22 +546,14 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
 end)
 
 ---------------------------------------------------------------------
--- medic supplies
----------------------------------------------------------------------
-AddEventHandler('rsg-medic:client:OpenMedicSupplies', function()
-    local job = RSGCore.Functions.GetPlayerData().job.name
-    if job ~= Config.JobRequired then return end
-    TriggerServerEvent('rsg-shops:server:openstore', 'medic', 'medic', 'Medical Supplies')
-end)
-
----------------------------------------------------------------------
 -- medic storage
 ---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:storage', function()
     local job = RSGCore.Functions.GetPlayerData().job.name
     local stashloc = mediclocation
+
     if job ~= Config.JobRequired then return end
-    TriggerServerEvent('rsg-medic:server:openstash', stashloc)
+    TriggerServerEvent('rsg-medic:server:openinventory', stashloc)
 end)
 
 ---------------------------------------------------------------------
@@ -606,6 +576,7 @@ RegisterNetEvent('rsg-medic:client:usebandage', function()
             isBusy = true
             LocalPlayer.state:set('inv_busy', true, true)
             SetCurrentPedWeapon(cache.ped, GetHashKey('weapon_unarmed'))
+
             lib.progressBar({
                 duration = Config.BandageTime,
                 position = 'bottom',
@@ -621,22 +592,24 @@ RegisterNetEvent('rsg-medic:client:usebandage', function()
                     clip = 'bandage_fast',
                     flag = 1,
                 },
-                label = 'Applying Bandage',
+                label = locale('cl_progress'),
             })
+
             local currenthealth = GetEntityHealth(cache.ped)
             local newhealth = (currenthealth + Config.BandageHealth)
             if newhealth > 600 then
                 newhealth = 600
             end
             SetEntityHealth(cache.ped, newhealth)
+
             TriggerServerEvent('rsg-medic:server:removeitem', 'bandage', 1)
             LocalPlayer.state:set('inv_busy', false, true)
             isBusy = false
         else
-            lib.notify({ title = 'Error', 'you don\'t have any bandages!', type = 'error', duration = 5000 })
+            lib.notify({ title = locale('cl_error'), description = locale('cl_error_b'), type = 'error', duration = 5000 })
         end
     else
-        lib.notify({ title = 'Error', 'not able to do that right now!', type = 'error', duration = 5000 })
+        lib.notify({ title = locale('cl_error'), description = locale('cl_error_c'), type = 'error', duration = 5000 })
     end
 end)
 

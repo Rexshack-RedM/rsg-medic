@@ -1,9 +1,11 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local blipEntries = {}
 local transG = Config.DeathTimer
+lib.locale()
 
------------------------------------------------------- FUNCTIONS -------------------------------------------------------
-
+------------------------
+--- FUNCTIONS 
+------------------------
 -- Get Closest Player
 local GetClosestPlayer = function()
     local coords = GetEntityCoords(cache.ped)
@@ -27,23 +29,16 @@ local GetClosestPlayer = function()
     return closestPlayer, closestDistance
 end
 
-
--------------------------------------------------------- EVENTS --------------------------------------------------------
-
-
+------------------------
+--- EVENTS
+------------------------
 -- Toggle On-Duty
 AddEventHandler('rsg-medic:client:ToggleDuty', function()
     RSGCore.Functions.GetPlayerData(function(PlayerData)
         local PlayerJob = PlayerData.job
 
         if PlayerJob.name ~= Config.JobRequired then
-            lib.notify({
-                title = Lang:t('client.lang_15'),
-                type = 'error',
-                icon = 'fa-solid fa-kit-medical',
-                iconAnimation = 'shake',
-                duration = 7000
-            })
+            lib.notify({ title = locale('cl_not_medic'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
             return
         end
 
@@ -54,28 +49,14 @@ end)
 -- Medic Revive Player
 AddEventHandler('rsg-medic:client:RevivePlayer', function()
     local hasItem = RSGCore.Functions.HasItem('firstaid', 1)
-
     if not hasItem then
-        lib.notify({
-            title = Lang:t('client.lang_16'),
-            type = 'error',
-            icon = 'fa-solid fa-kit-medical',
-            iconAnimation = 'shake',
-            duration = 7000
-        })
+        lib.notify({ title = locale('cl_need_kit'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake',  duration = 7000  })
         return
     end
 
     local player, distance = GetClosestPlayer()
-
     if player == -1 or distance >= 5.0 then
-        lib.notify({
-            title = Lang:t('client.lang_17'),
-            type = 'error',
-            icon = 'fa-solid fa-kit-medical',
-            iconAnimation = 'shake',
-            duration = 7000
-        })
+        lib.notify({ title = locale('cl_player_nearby'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
         return
     end
 
@@ -103,7 +84,7 @@ AddEventHandler('rsg-medic:client:RevivePlayer', function()
             move = true,
             mouse = false,
         },
-        label = Lang:t('client.lang_18'),
+        label = locale('cl_reviving'),
     })
 
     ClearPedTasks(cache.ped)
@@ -116,28 +97,14 @@ end)
 -- Medic Treat Wounds
 AddEventHandler('rsg-medic:client:TreatWounds', function()
     local hasItem = RSGCore.Functions.HasItem('bandage', 1)
-
     if not hasItem then
-        lib.notify({
-            title = Lang:t('client.lang_19'),
-            type = 'error',
-            icon = 'fa-solid fa-kit-medical',
-            iconAnimation = 'shake',
-            duration = 7000
-        })
+        lib.notify({ title = locale('cl_need_bandage'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
         return
     end
 
     local player, distance = GetClosestPlayer()
-
     if player == -1 or distance >= 5.0 then
-        lib.notify({
-            title = Lang:t('client.lang_20'),
-            type = 'error',
-            icon = 'fa-solid fa-kit-medical',
-            iconAnimation = 'shake',
-            duration = 7000
-        })
+        lib.notify({ title = locale('cl_player_nearby'), type = 'error', icon = 'fa-solid fa-kit-medical', iconAnimation = 'shake', duration = 7000 })
         return
     end
 
@@ -166,7 +133,7 @@ AddEventHandler('rsg-medic:client:TreatWounds', function()
             move = true,
             mouse = false,
         },
-        label = Lang:t('client.lang_21'),
+        label = locale('cl_treating'),
     })
 
     ClearPedTasks(cache.ped)
@@ -178,8 +145,8 @@ end)
 
 -- Medic Treat Wounds
 RegisterNetEvent('rsg-medic:client:HealInjuries', function()
-    SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
-    SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
+    SetAttributeCoreValue(cache.ped, 0, 100)
+    SetAttributeCoreValue(cache.ped, 1, 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
     ClearPedBloodDamage(cache.ped)
@@ -187,7 +154,7 @@ end)
 
 -- Medic Alert
 RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
-    lib.notify({ title = 'Info', description = text, type = 'info', duration = 7000 })
+    lib.notify({ title = locale('cl_info'), description = text, type = 'medic', duration = 7000 })
 
     local blip = BlipAddForCoords(1664425300, coords.x, coords.y, coords.z)
     local blip2 = BlipAddForCoords(1664425300, coords.x, coords.y, coords.z)
@@ -221,7 +188,7 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
             transG = transG - 1
 
             if Config.Debug then
-                print(Lang:t('client.lang_22')..tostring(distance)..Lang:t('client.lang_23'))
+                print(locale('cl_player_blip') .. tostring(distance) .. locale('cl_m'))
             end
 
             if transG <= 0 or distance < 5.0 then
@@ -232,8 +199,8 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
                     if coords == bcoords then
                         if Config.Debug then
                             print('')
-                            print(Lang:t('client.lang_24')..tostring(bcoords))
-                            print(Lang:t('client.lang_25')..tostring(blipEntries[i].handle))
+                            print(locale('cl_blip')..tostring(bcoords))
+                            print(locale('cl_blip_remove')..tostring(blipEntries[i].handle))
                             print('')
                         end
 
@@ -254,8 +221,9 @@ RegisterNetEvent('rsg-medic:client:medicAlert', function(coords, text)
 end)
 
 -- Cleanup
+local resource = GetCurrentResourceName()
 AddEventHandler("onResourceStop", function(resourceName)
-    if GetCurrentResourceName() ~= resourceName then return end
+    if resource ~= resourceName then return end
 
     ClearGpsMultiRoute(coords)
 
