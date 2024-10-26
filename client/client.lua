@@ -175,6 +175,9 @@ local deathLog = function()
         weaponLabel = weaponItem.label
         weaponName = weaponItem.name
     end
+
+    TriggerServerEvent('rsg-log:server:CreateLog', 'death', locale('cl_death_log_title', {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)}), 'red', locale('cl_death_log_message', {killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName}))
+
     local msgDiscordA = locale('cl_death_log_title', {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)})
     local msgDiscordB = locale('cl_death_log_message', { killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName})
     TriggerServerEvent('rsg-medic:server:sendToDiscord', msgDiscordA, msgDiscordB)
@@ -293,6 +296,7 @@ CreateThread(function()
 
             if deathTimerStarted and deathSecondsRemaining > 0 then
                 DrawTxt(locale('cl_respawn') .. deathSecondsRemaining .. locale('cl_seconds'), 0.50, 0.80, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                -- DrawTxt('PULSA [E] PARA REAPARECER '..deathSecondsRemaining..' s.. \n PULSE [J] PARA LLAMAR AL DOCTOR \n O PUEDE UTILIZAR /HELP', 0.50, 0.80, 0.5, 0.5, true, 255, 255, 255, 200, true)
             end
 
             if deathTimerStarted and deathSecondsRemaining == 0 and medicsonduty == 0 then
@@ -302,6 +306,7 @@ CreateThread(function()
             if deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and medicsonduty > 0 and not medicCalled then
                 if deathSecondsRemaining == 0 then
                     DrawTxt(locale('cl_press_respawn_b'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
+                    -- DrawTxt('PULSA [E] PARA REAPARECER '..deathSecondsRemaining..' s \n PULSE [J] PARA LLAMAR AL DOCTOR', 0.50, 1.0, 0.5, 0.5, true, 255, 255, 255, 200, true) -- White text
                 else
                     DrawTxt(locale('cl_press_assistance'), 0.50, 0.85, 0.5, 0.5, true, 104, 244, 120, 200, true)
                 end
@@ -376,9 +381,7 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
             },
             {   title = locale('cl_medical_supplies'),
                 icon = 'fa-solid fa-pills',
-                onSelect = function()
-                    TriggerServerEvent('rsg-shops:server:openstore', 'MedicSupplies', 'MedicSupplies', locale('cl_medical_supplies'))
-                end,
+                event = 'rsg-medic:client:OpenMedicSupplies',
                 arrow = true
             },
             {   title = locale('cl_medical_storage'),
@@ -389,6 +392,15 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
         }
     })
     lib.showContext("medic_mainmenu")
+end)
+
+---------------------------------------------------------------------
+-- medic supplies
+---------------------------------------------------------------------
+AddEventHandler('rsg-medic:client:OpenMedicSupplies', function()
+    local job = RSGCore.Functions.GetPlayerData().job.name
+    if job ~= Config.JobRequired then return end
+    TriggerServerEvent('rsg-shops:server:openstore', 'medic', 'medic', locale('cl_medical_supplies'))
 end)
 
 ---------------------------------------------------------------------
@@ -553,7 +565,7 @@ AddEventHandler('rsg-medic:client:storage', function()
     local stashloc = mediclocation
 
     if job ~= Config.JobRequired then return end
-    TriggerServerEvent('rsg-medic:server:openinventory', stashloc)
+    TriggerServerEvent('rsg-medic:server:openstash', stashloc)
 end)
 
 ---------------------------------------------------------------------

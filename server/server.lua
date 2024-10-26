@@ -35,11 +35,15 @@ RSGCore.Functions.CreateUseableItem('bandage', function(source, item)
     TriggerClientEvent('rsg-medic:client:usebandage', src, item.name)
 end)
 
-RegisterNetEvent('rsg-medic:server:openinventory', function(stashName)
+---------------------------------
+-- medic storage
+---------------------------------
+RegisterNetEvent('rsg-medic:server:openstash', function(location)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     if not Player then return end
     local data = { label = locale('sv_medical_storage'), maxweight = Config.StorageMaxWeight, slots = Config.StorageMaxSlots }
+    local stashName = 'medic_' .. location
     exports['rsg-inventory']:OpenInventory(src, stashName, data)
 end)
 
@@ -99,7 +103,14 @@ RegisterNetEvent('rsg-medic:server:deathactions', function()
         Player.Functions.SetMoney('bloodmoney', 0)
         TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_bloodmoney'), type = 'info', duration = 7000 })
     end
-
+    if Config.WipeExperienceOnRespawn then
+        Player.Functions.SetMoney('experience', 0)
+        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_exp'), type = 'info', duration = 7000 })
+    end
+    if Config.WipeGoldcoinOnRespawn then
+        Player.Functions.SetMoney('goldcoin', 0)
+        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_goldcoin'), type = 'info', duration = 7000 })
+    end
 end)
 
 -- Get Players Health
