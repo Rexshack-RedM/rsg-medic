@@ -177,10 +177,6 @@ local deathLog = function()
     end
 
     TriggerServerEvent('rsg-log:server:CreateLog', 'death', locale('cl_death_log_title', {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)}), 'red', locale('cl_death_log_message', {killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName}))
-
-    local msgDiscordA = locale('cl_death_log_title', {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)})
-    local msgDiscordB = locale('cl_death_log_message', { killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName})
-    TriggerServerEvent('rsg-medic:server:sendToDiscord', msgDiscordA, msgDiscordB)
 end
 
 ---------------------------------------------------------------------
