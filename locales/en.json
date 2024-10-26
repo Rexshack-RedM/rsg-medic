@@ -43,6 +43,5 @@
     "sv_lost_bloodmoney" : "you lost all your bloodmoney!",
     "sv_lost_exp" : "you lost all your XP!",
     "sv_lost_goldcoin" : "you lost all your goldcoin!",
-    "sv_not_medic" : "You are not a Medic!",
-
+    "sv_not_medic" : "You are not a Medic!"
 }
