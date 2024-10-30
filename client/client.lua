@@ -176,7 +176,7 @@ local deathLog = function()
         weaponName = weaponItem.name
     end
 
-    TriggerServerEvent('rsg-log:server:CreateLog', 'death', '%{playername} (%{playerid})'.. locale('cl_death_log_title'), {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)}), 'red', '%{killername} '..locale('cl_death_log_message')..' %{playername}'..locale('cl_death_log_message_b')..' **%{weaponlabel}** (%{weaponname})' ..locale('cl_death_log_message_c'), {killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName}))
+    TriggerServerEvent('rsg-log:server:CreateLog', 'death', '%{playername} (%{playerid}) '.. locale('cl_death_log_title'), {playername = GetPlayerName(player), playerid = GetPlayerServerId(player)}), 'red', '%{killername} '..locale('cl_death_log_message')..' %{playername}'..locale('cl_death_log_message_b')..' **%{weaponlabel}** (%{weaponname})', {killername = killerName, playername = GetPlayerName(player), weaponlabel = weaponLabel, weaponname = weaponName}))
 end
 
 ---------------------------------------------------------------------
