@@ -1,7 +1,8 @@
 {
-    "cl_death_log_title" : "%{playername} (%{playerid}) está muerto",
-    "cl_death_log_message": "%{killername} ha matado a %{playername} con una **%{weaponlabel}** (%{weaponname})",
-
+    "cl_death_log_title" : "está muerto",
+    "cl_death_log_message":  "ha matado a",
+    "cl_death_log_message_b":  "con una",
+    
     "cl_open" : "Abrir",
     "cl_respawn" : "REAPARECER EN ",
     "cl_seconds" : " SEGUNDOS...",
