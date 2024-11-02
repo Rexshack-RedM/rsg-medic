@@ -1,8 +1,7 @@
 Config = {}
 
-Config.Debug                    = false
-
 -- Settings
+Config.Debug                    = false
 Config.JobRequired              = 'medic'
 Config.StorageMaxWeight         = 4000000
 Config.StorageMaxSlots          = 48
@@ -17,13 +16,14 @@ Config.AddGPSRoute              = true
 Config.MedicCallDelay           = 60 -- delay in seconds before calling medic again
 Config.BandageTime              = 10000
 Config.BandageHealth            = 100
+Config.ResetOutlawStatus        = false
 
 -- Blip Settings
 Config.Blip =
 {
-    blipName                    = 'Medic', -- Config.Blip.blipName
-    blipSprite                  = 'blip_shop_doctor', -- Config.Blip.blipSprite
-    blipScale                   = 0.2 -- Config.Blip.blipScale
+    blipName   = 'Medic', -- Config.Blip.blipName
+    blipSprite = 'blip_shop_doctor', -- Config.Blip.blipSprite
+    blipScale  = 0.2 -- Config.Blip.blipScale
 }
 
 -- Prompt Locations

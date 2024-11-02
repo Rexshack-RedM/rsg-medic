@@ -472,6 +472,11 @@ AddEventHandler('rsg-medic:client:revive', function()
         TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
         TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
 
+        -- Reset Outlaw Status on respawn
+        if Config.ResetOutlawStatus then
+            TriggerServerEvent('rsg-prison:server:resetoutlawstatus')
+        end
+
         -- Reset Death Timer
         deathactive = false
         deathTimerStarted = false
@@ -509,6 +514,11 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function()
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
 
+    -- Reset Outlaw Status on respawn
+    if Config.ResetOutlawStatus then
+        TriggerServerEvent('rsg-prison:server:resetoutlawstatus')
+    end
+
     -- Reset Death Timer
     deathactive = false
     deathTimerStarted = false
@@ -542,6 +552,11 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
     TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
     TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
+
+    -- Reset Outlaw Status on respawn
+    if Config.ResetOutlawStatus then
+        TriggerServerEvent('rsg-prison:server:resetoutlawstatus')
+    end
 
     -- Reset Death Timer
     deathactive = false
