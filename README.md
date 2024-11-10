@@ -15,3 +15,4 @@
 
 # Commands Use
 - /revive <player id> (Admin Only)
+- /heal <player id> (Admin Only)

@@ -572,6 +572,43 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
 end)
 
 ---------------------------------------------------------------------
+-- admin Heal
+---------------------------------------------------------------------
+RegisterNetEvent('rsg-medic:client:adminHeal', function()
+    local player = PlayerPedId()
+    local pos = GetEntityCoords(cache.ped, true)
+    Wait(1000)
+    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
+    SetEntityInvincible(cache.ped, false)
+    ClearPedBloodDamage(cache.ped)
+    SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
+    SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
+    TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
+    lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
+end)
+
+---------------------------------------------------------------------
+-- Player Heal
+---------------------------------------------------------------------
+RegisterNetEvent('rsg-medic:client:playerHeal', function()
+    local pos = GetEntityCoords(cache.ped, true)
+    Wait(1000)
+    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
+    SetEntityInvincible(cache.ped, false)
+    ClearPedBloodDamage(cache.ped)
+    SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
+    SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
+    TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
+    lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
+end)
+
+---------------------------------------------------------------------
 -- medic storage
 ---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:storage', function()

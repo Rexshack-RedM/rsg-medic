@@ -36,6 +36,8 @@
     "sv_medical_storage" : "Magazzino Medico",
     "sv_revive" : "Rianima un Giocatore o Te Stesso (Solo Admin)",
     "sv_revive_2" : "ID Giocatore (può essere vuoto)",
+    "sv_heal" : "Guarire un Giocatore o Te Stesso (Solo Admin)",
+    "sv_heal_2" : "ID Giocatore (può essere vuoto)",
     "sv_no_online" : "Il Player non è Online",
     "sv_kill" : "Uccidi un Giocatore (Solo Admin)",
     "sv_kill_id" : "ID Giocatore (può essere vuoto)",
