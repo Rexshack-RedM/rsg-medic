@@ -36,6 +36,8 @@
     "sv_medical_storage" : "Almacén Médico",
     "sv_revive" : "Revivir a un Jugador o a ti Mismo (Solo Admin)",
     "sv_revive_2" : "ID del Jugador (puede estar vacío)",
+    "sv_heal" : "Sanar a un Jugador o a ti Mismo (Solo Admin)",
+    "sv_heal_2" : "ID del Jugador (puede estar vacío)",
     "sv_no_online" : "El jugador no está en línea",
     "sv_kill" : "Matar a un Jugador (Solo Admin)",
     "sv_kill_id" : "ID del Jugador (puede estar vacío)",

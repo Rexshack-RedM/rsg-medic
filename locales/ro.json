@@ -36,6 +36,8 @@
     "sv_medical_storage": "Depozit medic",
     "sv_revive": "Revive un jucator sau pe tine insuti (doar admin)",
     "sv_revive_2": "ID Jucator (poate fi gol)",
+    "sv_heal": "Heal un jucator sau pe tine insuti (doar admin)",
+    "sv_heal_2": "ID Jucator (poate fi gol)",
     "sv_no_online": "Jucatorul nu este online",
     "sv_kill": "Ucide un jucator (doar admin)",
     "sv_kill_id": "ID Jucator (poate fi gol)",

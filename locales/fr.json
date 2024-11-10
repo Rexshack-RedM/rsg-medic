@@ -35,6 +35,8 @@
     "sv_medical_storage" : "Stock Médical",
     "sv_revive" : "Réanimer un joueur ou soi-même (Admin uniquement)",
     "sv_revive_2" : "ID du joueur (peut être vide)",
+    "sv_heal" : "Guérir un joueur ou soi-même (Admin uniquement)",
+    "sv_heal_2" : "ID du joueur (peut être vide)",
     "sv_no_online" : "Le joueur n'est pas en ligne",
     "sv_kill" : "Tuer un joueur (Admin uniquement)",
     "sv_kill_id" : "ID du joueur (peut être vide)",
