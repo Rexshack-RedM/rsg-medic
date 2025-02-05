@@ -260,7 +260,7 @@ CreateThread(function()
     repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
     while true do
         local health = GetEntityHealth(cache.ped)
-        if health == 0 and deathactive == false then
+        if health == 0 and deathactive == false and not LocalPlayer.state.invincible then
             exports.spawnmanager:setAutoSpawn(false)
             deathTimerStarted = true
             deathTimer()
@@ -279,8 +279,10 @@ end)
 CreateThread(function()
     repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
     while true do
-        local health = GetEntityHealth(cache.ped)
-        TriggerServerEvent('rsg-medic:server:SetHealth', health)
+        if not LocalPlayer.state.invincible then 
+            local health = GetEntityHealth(cache.ped)
+            TriggerServerEvent('rsg-medic:server:SetHealth', health)
+        end
         Wait(1000)
     end
 end)
