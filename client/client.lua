@@ -318,7 +318,7 @@ CreateThread(function()
 
                 TriggerEvent('rsg-medic:client:revive')
                 TriggerServerEvent('rsg-medic:server:deathactions')
-                if Config.WipeWeaponsOnRespawn then
+                if Config.WipeInventoryOnRespawn then
                     RemoveAllPedWeapons(cache.ped, true)
                     RemoveAllPedAmmo(cache.ped)
                 end
