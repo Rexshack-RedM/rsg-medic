@@ -9,7 +9,6 @@ Config.DeathTimer               = 300 -- 300 = 5 mins / testing 60 = 1 min
 Config.WipeInventoryOnRespawn   = false
 Config.WipeCashOnRespawn        = false
 Config.WipeBloodmoneyOnRespawn  = false
-Config.WipeWeaponsOnRespawn     = false
 Config.MaxHealth                = 600
 Config.MedicReviveTime          = 5000
 Config.MedicTreatTime           = 5000
