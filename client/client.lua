@@ -318,6 +318,10 @@ CreateThread(function()
 
                 TriggerEvent('rsg-medic:client:revive')
                 TriggerServerEvent('rsg-medic:server:deathactions')
+                if Config.WipeWeaponsOnRespawn then
+                    RemoveAllPedWeapons(cache.ped, true)
+                    RemoveAllPedAmmo(cache.ped)
+                end
             end
 
             if deathactive and deathTimerStarted and deathSecondsRemaining < Config.DeathTimer and IsControlPressed(0, RSGCore.Shared.Keybinds['G']) and not medicCalled then
