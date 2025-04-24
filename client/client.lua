@@ -473,9 +473,9 @@ AddEventHandler('rsg-medic:client:revive', function()
         ClearPedBloodDamage(cache.ped)
         SetAttributeCoreValue(cache.ped, 0, 100)
         SetAttributeCoreValue(cache.ped, 1, 100)
-        TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-        TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-        TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
+        TriggerEvent('hud:client:UpdateHunger', 100)
+        TriggerEvent('hud:client:UpdateThirst', 100)
+        TriggerEvent('hud:client:UpdateCleanliness', 100)
         TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
 
         -- Reset Outlaw Status on respawn
@@ -516,9 +516,9 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function()
     ClearPedBloodDamage(cache.ped)
     SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
     SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
+    TriggerEvent('hud:client:UpdateHunger', 100)
+    TriggerEvent('hud:client:UpdateThirst', 100)
+    TriggerEvent('hud:client:UpdateCleanliness', 100)
 
     -- Reset Outlaw Status on respawn
     if Config.ResetOutlawStatus then
@@ -554,9 +554,9 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     ClearPedBloodDamage(cache.ped)
     SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
     SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
+    TriggerEvent('hud:client:UpdateHunger', 100)
+    TriggerEvent('hud:client:UpdateThirst', 100)
+    TriggerEvent('hud:client:UpdateCleanliness', 100)
     TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
 
     -- Reset Outlaw Status on respawn
@@ -589,9 +589,9 @@ RegisterNetEvent('rsg-medic:client:adminHeal', function()
     ClearPedBloodDamage(cache.ped)
     SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
     SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
+    TriggerEvent('hud:client:UpdateHunger', 100)
+    TriggerEvent('hud:client:UpdateThirst', 100)
+    TriggerEvent('hud:client:UpdateCleanliness', 100)
     TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
     lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
 end)
@@ -607,9 +607,9 @@ RegisterNetEvent('rsg-medic:client:playerHeal', function()
     ClearPedBloodDamage(cache.ped)
     SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
     SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
+    TriggerEvent('hud:client:UpdateHunger', 100)
+    TriggerEvent('hud:client:UpdateThirst', 100)
+    TriggerEvent('hud:client:UpdateCleanliness', 100)
     TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
     lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
 end)
