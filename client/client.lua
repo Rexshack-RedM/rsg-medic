@@ -267,6 +267,7 @@ CreateThread(function()
             deathLog()
             deathactive = true
             TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
+            LocalPlayer.state:set('isDead', true, true)
             TriggerEvent('rsg-medic:client:DeathCam')
         end
         Wait(1000)
@@ -281,7 +282,9 @@ CreateThread(function()
     while true do
         if not LocalPlayer.state.invincible then 
             local health = GetEntityHealth(cache.ped)
-            TriggerServerEvent('rsg-medic:server:SetHealth', health)
+            if LocalPlayer.state.health ~= health then 
+                LocalPlayer.state:set('health', health, true)
+            end
         end
         Wait(1000)
     end
@@ -471,12 +474,9 @@ AddEventHandler('rsg-medic:client:revive', function()
         NetworkResurrectLocalPlayer(respawnPos, true, false)
         SetEntityInvincible(cache.ped, false)
         ClearPedBloodDamage(cache.ped)
-        SetAttributeCoreValue(cache.ped, 0, 100)
-        SetAttributeCoreValue(cache.ped, 1, 100)
-        TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-        TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-        TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
-        TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
+        SetAttributeCoreValue(cache.ped, 0, Config.ReviveHealth)
+        SetAttributeCoreValue(cache.ped, 1, 0)
+        LocalPlayer.state:set('health', math.round(Config.MaxHealth * (Config.ReviveHealth / 100)), true)
 
         -- Reset Outlaw Status on respawn
         if Config.ResetOutlawStatus then
@@ -496,6 +496,7 @@ AddEventHandler('rsg-medic:client:revive', function()
         Wait(19000)
 
         TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
+        LocalPlayer.state:set('isDead', false, true)
     end
 end)
 
@@ -504,21 +505,19 @@ end)
 ---------------------------------------------------------------------
 -- Admin Revive
 RegisterNetEvent('rsg-medic:client:adminRevive', function()
-    local player = PlayerPedId()
     local pos = GetEntityCoords(cache.ped, true)
 
     DoScreenFadeOut(500)
 
     Wait(1000)
 
-    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
+    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
     SetEntityInvincible(cache.ped, false)
     ClearPedBloodDamage(cache.ped)
     SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
     SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
+    TriggerEvent('hud:client:UpdateNeeds', 100, 100, 100)
+    TriggerEvent('hud:client:UpdateStress', 0)
 
     -- Reset Outlaw Status on respawn
     if Config.ResetOutlawStatus then
@@ -536,13 +535,13 @@ RegisterNetEvent('rsg-medic:client:adminRevive', function()
     DoScreenFadeIn(1800)
 
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
+    LocalPlayer.state:set('isDead', false, true)
 end)
 
 ---------------------------------------------------------------------
 -- player revive
 ---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:playerRevive', function()
-
     local pos = GetEntityCoords(cache.ped, true)
 
     DoScreenFadeOut(500)
@@ -552,12 +551,9 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
     SetEntityInvincible(cache.ped, false)
     ClearPedBloodDamage(cache.ped)
-    SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
-    SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
-    TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
+    SetAttributeCoreValue(cache.ped, 0, Config.MedicReviveHealth) -- SetAttributeCoreValue
+    SetAttributeCoreValue(cache.ped, 1, 0) -- SetAttributeCoreValue
+    LocalPlayer.state:set('health', math.round(Config.MaxHealth * (Config.MedicReviveHealth / 100)), true)
 
     -- Reset Outlaw Status on respawn
     if Config.ResetOutlawStatus then
@@ -575,31 +571,13 @@ RegisterNetEvent('rsg-medic:client:playerRevive', function()
     DoScreenFadeIn(1800)
 
     TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", false)
+    LocalPlayer.state:set('isDead', false, true)
 end)
 
 ---------------------------------------------------------------------
 -- admin Heal
 ---------------------------------------------------------------------
 RegisterNetEvent('rsg-medic:client:adminHeal', function()
-    local player = PlayerPedId()
-    local pos = GetEntityCoords(cache.ped, true)
-    Wait(1000)
-    NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(player), true, false)
-    SetEntityInvincible(cache.ped, false)
-    ClearPedBloodDamage(cache.ped)
-    SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
-    SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
-    TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
-    lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
-end)
-
----------------------------------------------------------------------
--- Player Heal
----------------------------------------------------------------------
-RegisterNetEvent('rsg-medic:client:playerHeal', function()
     local pos = GetEntityCoords(cache.ped, true)
     Wait(1000)
     NetworkResurrectLocalPlayer(pos.x, pos.y, pos.z, GetEntityHeading(cache.ped), true, false)
@@ -607,13 +585,12 @@ RegisterNetEvent('rsg-medic:client:playerHeal', function()
     ClearPedBloodDamage(cache.ped)
     SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
     SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "cleanliness", 100)
-    TriggerServerEvent('rsg-medic:server:SetHealth', Config.MaxHealth)
+    TriggerEvent('hud:client:UpdateNeeds', 100, 100, 100)
+    TriggerEvent('hud:client:UpdateStress', 0)
+    LocalPlayer.state:set('health', Config.MaxHealth, true)
     lib.notify({title = 'You have been Healed', duration = 5000, type = 'inform'})
-end)
-
+end
+)
 ---------------------------------------------------------------------
 -- medic storage
 ---------------------------------------------------------------------

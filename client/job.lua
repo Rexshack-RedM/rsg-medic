@@ -145,10 +145,7 @@ end)
 
 -- Medic Treat Wounds
 RegisterNetEvent('rsg-medic:client:HealInjuries', function()
-    SetAttributeCoreValue(cache.ped, 0, 100)
-    SetAttributeCoreValue(cache.ped, 1, 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "hunger", RSGCore.Functions.GetPlayerData().metadata["hunger"] + 100)
-    TriggerServerEvent("RSGCore:Server:SetMetaData", "thirst", RSGCore.Functions.GetPlayerData().metadata["thirst"] + 100)
+    SetAttributeCoreValue(cache.ped, 0, GetAttributeCoreValue(cache.ped, 0) + Config.MedicTreatHealth)
     ClearPedBloodDamage(cache.ped)
 end)
 
