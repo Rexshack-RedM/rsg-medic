@@ -642,10 +642,7 @@ RegisterNetEvent('rsg-medic:client:usebandage', function()
             })
 
             local currenthealth = GetEntityHealth(cache.ped)
-            local newhealth = (currenthealth + Config.BandageHealth)
-            if newhealth > 600 then
-                newhealth = 600
-            end
+            local newhealth = lib.math.clamp(math.round(currenthealth + (600 * (Config.BandageHealth / 100))), 0, 600)
             SetEntityHealth(cache.ped, newhealth)
 
             TriggerServerEvent('rsg-medic:server:removeitem', 'bandage', 1)
