@@ -18,7 +18,7 @@ Config.MedicReviveHealth        = 60 -- percentage of max health when player is 
 Config.AddGPSRoute              = true
 Config.MedicCallDelay           = 60 -- delay in seconds before calling medic again
 Config.BandageTime              = 10000
-Config.BandageHealth            = 15
+Config.BandageHealth            = 15 -- percetnate of max health when player use bandage
 Config.ResetOutlawStatus        = false
 
 -- Blip Settings
