@@ -28,7 +28,7 @@ RSGCore.Commands.Add('revive', locale('sv_revive'), {{name = 'id', help = locale
     local src = source
 
     if not args[1] then
-        TriggerClientEvent('rsg-medic:client:playerRevive', src)
+        TriggerClientEvent('rsg-medic:client:adminRevive', src)
         return
     end
 
@@ -59,7 +59,7 @@ RSGCore.Commands.Add('heal', locale('sv_heal'), {{name = 'id', help = locale('sv
     local src = source
 
     if not args[1] then
-        TriggerClientEvent('rsg-medic:client:playerHeal', src)
+        TriggerClientEvent('rsg-medic:client:adminHeal', src)
         return
     end
 
@@ -96,30 +96,6 @@ RegisterNetEvent('rsg-medic:server:deathactions', function()
     end
 end)
 
--- Get Players Health
-RSGCore.Functions.CreateCallback('rsg-medic:server:getplayerhealth', function(source, cb)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    local health = Player.PlayerData.metadata['health']
-    cb(health)
-end)
-
--- Set Player Health
-RegisterNetEvent('rsg-medic:server:SetHealth', function(amount)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-
-    if not Player then return end
-
-    amount = tonumber(amount)
-
-    if amount > Config.MaxHealth then
-        amount = Config.MaxHealth
-    end
-
-    Player.Functions.SetMetaData('health', amount)
-end)
-
 -- Medic Revive Player
 RegisterNetEvent('rsg-medic:server:RevivePlayer', function(playerId)
     local src = source
@@ -154,7 +130,7 @@ RegisterNetEvent('rsg-medic:server:TreatWounds', function(playerId)
 
     if Player.Functions.RemoveItem('bandage', 1) then
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items['bandage'], 'remove')
-        TriggerClientEvent('rsg-medic:client:HealInjuries', Patient.PlayerData.source, 'full')
+        TriggerClientEvent('rsg-medic:client:HealInjuries', Patient.PlayerData.source)
     end
 end)
 

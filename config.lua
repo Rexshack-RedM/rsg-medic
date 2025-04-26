@@ -12,10 +12,13 @@ Config.WipeBloodmoneyOnRespawn  = false
 Config.MaxHealth                = 600
 Config.MedicReviveTime          = 5000
 Config.MedicTreatTime           = 5000
+Config.MedicTreatHealth         = 30 -- percetnate of max health when player is healed by medic
+Config.ReviveHealth             = 20 -- percentage of max health when player revive after pressing [E]
+Config.MedicReviveHealth        = 60 -- percentage of max health when player is revived by medic
 Config.AddGPSRoute              = true
 Config.MedicCallDelay           = 60 -- delay in seconds before calling medic again
 Config.BandageTime              = 10000
-Config.BandageHealth            = 100
+Config.BandageHealth            = 15 -- percetnate of max health when player use bandage
 Config.ResetOutlawStatus        = false
 
 -- Blip Settings
