@@ -644,7 +644,7 @@ RegisterNetEvent('rsg-medic:client:usebandage', function()
     if isBusy then return end
     local hasItem = RSGCore.Functions.HasItem('bandage', 1)
     local PlayerData = RSGCore.Functions.GetPlayerData()
-    if not PlayerData.metadata['isdead'] and not PlayerData.metadata['ishandcuffed'] then
+    if not PlayerData.metadata['isdead'] and not PlayerData.metadata['ishandcuffed'] and not IsPedOnMount(cache.ped) then
         if hasItem then
             isBusy = true
             LocalPlayer.state:set('inv_busy', true, true)
