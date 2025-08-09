@@ -1,6 +1,5 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 local sharedWeapons = exports['rsg-core']:GetWeapons()
-lib.locale()
 local createdEntries = {}
 local isLoggedIn = false
 local deathSecondsRemaining = 0
@@ -16,6 +15,7 @@ local deadcam = nil
 local angleY = 0.0
 local angleZ = 0.0
 local isBusy = false
+lib.locale()
 
 ---------------------------------------------------------------------
 -- death timer
@@ -274,9 +274,6 @@ CreateThread(function()
     end
 end)
 
----------------------------------------------------------------------
--- player death loop
----------------------------------------------------------------------
 CreateThread(function()
     repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
     while true do
@@ -294,25 +291,26 @@ CreateThread(function()
         Wait(1000)
     end
 end)
+
 ---------------------------------------------------------------------
 -- player combat log check
 ---------------------------------------------------------------------
 RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     local PlayerData = RSGCore.Functions.GetPlayerData()
     local health = GetEntityHealth(cache.ped)
-        if PlayerData.metadata['isdead'] then
-            if health ~= 0 and deathactive == false then
-                SetEntityHealth(cache.ped, 0)
-                exports.spawnmanager:setAutoSpawn(false)
-                deathTimerStarted = true
-                deathTimer()
-                deathLog()
-                deathactive = true
-                TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
-                LocalPlayer.state:set('isdead', true, true)
-                TriggerEvent('rsg-medic:client:DeathCam')
-            end
+    if PlayerData.metadata['isdead'] then
+        if health ~= 0 and deathactive == false then
+            SetEntityHealth(cache.ped, 0)
+            exports.spawnmanager:setAutoSpawn(false)
+            deathTimerStarted = true
+            deathTimer()
+            deathLog()
+            deathactive = true
+            TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
+            LocalPlayer.state:set('isdead', true, true)
+            TriggerEvent('rsg-medic:client:DeathCam')
         end
+    end
 end)
 
 ---------------------------------------------------------------------
