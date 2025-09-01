@@ -483,8 +483,9 @@ AddEventHandler('rsg-medic:client:GetMedicsOnDuty', function()
         medicsonduty = mediccount
     end)
 end)
-
--- Player Revive After Pressing [E]
+---------------------------------------------------------------------
+-- player revive after pressing [E]
+---------------------------------------------------------------------
 AddEventHandler('rsg-medic:client:revive', function()
     SetClosestRespawn()
 
@@ -495,11 +496,11 @@ AddEventHandler('rsg-medic:client:revive', function()
 
         local respawnPos = Config.RespawnLocations[closestRespawn].coords
         NetworkResurrectLocalPlayer(respawnPos, true, false)
-        SetEntityInvincible(cache.ped, false)
         ClearPedBloodDamage(cache.ped)
-        SetAttributeCoreValue(cache.ped, 0, Config.ReviveHealth)
-        SetAttributeCoreValue(cache.ped, 1, 0)
-        LocalPlayer.state:set('health', math.round(Config.MaxHealth * (Config.ReviveHealth / 100)), true)
+        SetAttributeCoreValue(cache.ped, 0, 100) -- SetAttributeCoreValue
+        SetAttributeCoreValue(cache.ped, 1, 100) -- SetAttributeCoreValue
+        TriggerEvent('hud:client:UpdateNeeds', 100, 100, 100)
+        TriggerEvent('hud:client:UpdateStress', 0)
 
         -- Reset Outlaw Status on respawn
         if Config.ResetOutlawStatus then
@@ -526,7 +527,6 @@ end)
 ---------------------------------------------------------------------
 -- admin revive
 ---------------------------------------------------------------------
--- Admin Revive
 RegisterNetEvent('rsg-medic:client:adminRevive', function()
     local pos = GetEntityCoords(cache.ped, true)
 
