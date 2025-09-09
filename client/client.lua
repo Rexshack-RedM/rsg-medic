@@ -253,41 +253,41 @@ CreateThread(function()
     end
 end)
 
----------------------------------------------------------------------
--- player death loop
----------------------------------------------------------------------
-CreateThread(function()
-    repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
-    while true do
-        local health = GetEntityHealth(cache.ped)
-        if health == 0 and deathactive == false and not LocalPlayer.state.invincible then
-            exports.spawnmanager:setAutoSpawn(false)
-            deathTimerStarted = true
-            deathTimer()
-            deathLog()
-            deathactive = true
-            TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
-            LocalPlayer.state:set('isDead', true, true)
-            TriggerEvent('rsg-medic:client:DeathCam')
-        end
-        Wait(1000)
-    end
-end)
+local function PlayerDeath()
+    exports.spawnmanager:setAutoSpawn(false)
+    deathTimerStarted = true
+    deathTimer()
+    deathLog()
+    deathactive = true
+    TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
+    LocalPlayer.state:set('isDead', true, true)
+    TriggerEvent('rsg-medic:client:DeathCam')
+end
 
 CreateThread(function()
-    repeat Wait(1000) until LocalPlayer.state['isLoggedIn']
+    while not LocalPlayer.state['isLoggedIn'] do
+        Wait(1000)
+    end
+
+    local lastHealth = nil
+
     while true do
-        local health = GetEntityHealth(cache.ped)
-            if health == 0 and deathactive == false then
-                exports.spawnmanager:setAutoSpawn(false)
-                deathTimerStarted = true
-                deathTimer()
-                deathLog()
-                deathactive = true
-                TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
-                LocalPlayer.state:set('isdead', true, true)
-                TriggerEvent('rsg-medic:client:DeathCam')
+        if not LocalPlayer.state.invincible then
+            local ped = GetPlayerPedId()
+            if DoesEntityExist(ped) then
+                local health = GetEntityHealth(ped)
+
+                if health == 0 and not deathactive then
+                    PlayerDeath()
+                end
+
+                if lastHealth ~= health then
+                    LocalPlayer.state:set('health', health, true)
+                    lastHealth = health
+                end
             end
+        end
+        
         Wait(1000)
     end
 end)
@@ -301,14 +301,7 @@ RegisterNetEvent('RSGCore:Client:OnPlayerLoaded', function()
     if PlayerData.metadata['isdead'] then
         if health ~= 0 and deathactive == false then
             SetEntityHealth(cache.ped, 0)
-            exports.spawnmanager:setAutoSpawn(false)
-            deathTimerStarted = true
-            deathTimer()
-            deathLog()
-            deathactive = true
-            TriggerServerEvent("RSGCore:Server:SetMetaData", "isdead", true)
-            LocalPlayer.state:set('isdead', true, true)
-            TriggerEvent('rsg-medic:client:DeathCam')
+            PlayerDeath()
         end
     end
 end)
