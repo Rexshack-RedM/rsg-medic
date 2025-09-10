@@ -273,23 +273,21 @@ CreateThread(function()
 
     while true do
         if not LocalPlayer.state.invincible then
-            local ped = GetPlayerPedId()
+            local ped = PlayerPedId()
             if DoesEntityExist(ped) then
                 local health = GetEntityHealth(ped)
-
                 if health == 0 and not deathactive then
                     PlayerDeath()
                 end
-
                 if lastHealth ~= health then
                     LocalPlayer.state:set('health', health, true)
                     lastHealth = health
                 end
             end
         end
-        
         Wait(1000)
     end
+
 end)
 
 ---------------------------------------------------------------------
