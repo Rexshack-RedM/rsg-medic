@@ -37,6 +37,7 @@ end
 local DrawTxt = function(str, x, y, w, h, enableShadow, col1, col2, col3, a, centre)
     local string = CreateVarString(10, "LITERAL_STRING", str)
 
+    SetTextFontForCurrentCommand(1) -- Font 1 for appropiate REDM style
     SetTextScale(w, h)
     SetTextColor(math.floor(col1), math.floor(col2), math.floor(col3), math.floor(a))
     SetTextCentre(centre)
