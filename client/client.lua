@@ -391,12 +391,6 @@ AddEventHandler('rsg-medic:client:mainmenu', function(location, name)
         id = "medic_mainmenu",
         title = name,
         options = {
-             {   title = locale('cl_employees'),
-                icon = 'fa-solid fa-list',
-                description = locale('cl_employees_b'),
-                event = 'rsg-bossmenu:client:mainmenu',
-                isBoss = true
-            },
             {   title = locale('cl_duty'),
                 icon = 'fa-solid fa-shield-heart',
                 event = 'rsg-medic:client:ToggleDuty',
