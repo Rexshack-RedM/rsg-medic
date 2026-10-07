@@ -2,38 +2,41 @@ fx_version 'cerulean'
 rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aware my resources *will* become incompatible once RedM ships.'
 game 'rdr3'
 
-description 'rsg-medic'
-version '2.2.1'
+name 'rsg-medic'
+description 'Death system and medic job for RSG Framework'
+version '3.0.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
-    'config.lua',
+    'shared/config.lua',
 }
 
 client_scripts {
     'client/client.lua',
-    'client/job.lua',
+    'client/automedic.lua',
 }
 
 server_scripts {
-    '@oxmysql/lib/MySQL.lua',
-    'server/*.lua',
+    'server/sv_config.lua',
+    'server/server.lua',
+    'server/automedic_webhooks.lua',
+    'server/automedic.lua',
+    'server/versionchecker.lua',
+}
+
+ui_page 'html/index.html'
+
+files {
+    'locales/*.json',
+    'html/index.html',
+    'html/style.css',
+    'html/script.js',
 }
 
 dependencies {
     'rsg-core',
-    'rsg-bossmenu',
+    'rsg-inventory',
     'ox_lib',
-    'ox_target'
-}
-
-ui_page 'web/index.html'
-
-files {
-    'locales/*.json',
-    'web/index.html',
-    'web/style.css',
-    'web/script.js',
 }
 
 lua54 'yes'

@@ -1,535 +1,375 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
 lib.locale()
 
--- Track skeleton viewers, broadcast injury updates
-local skeletonViewers = {}
-local function broadcastInjuryUpdate(playerId)
-    local Player = RSGCore.Functions.GetPlayer(playerId)
-    if not Player then return end
-    local injuries = Player.PlayerData.metadata['injuries']
-    local charinfo = Player.PlayerData.charinfo
-    local patientName = (charinfo.firstname or 'Unknown') .. ' ' .. (charinfo.lastname or 'Patient')
-    for viewerSrc, targetSrc in pairs(skeletonViewers) do
-        if targetSrc == playerId then
-            TriggerClientEvent('rsg-medic:client:updateInjuries', viewerSrc, playerId, injuries, patientName)
-        end
-    end
+local deathTimes   = {} -- [src] = os.time() when the player went down
+local alertTimes   = {} -- [src] = os.time() of last medic alert
+local pending      = {} -- [medicSrc] = { target, kind, start, duration }  in-progress revive/treat
+local actionCD     = {} -- [src] = GetGameTimer() of last bandage use
+
+local isMedicJob = {}
+for _, name in ipairs(Config.MedicJobs) do isMedicJob[name] = true end
+
+---------------------------------
+-- helpers
+---------------------------------
+local function Notify(src, key, nType, ...)
+    TriggerClientEvent('ox_lib:notify', src, {
+        title = locale('title'), description = locale(key, ...), type = nType, duration = 5000,
+    })
 end
 
-RegisterNetEvent('rsg-medic:server:watchSkeleton', function(targetSrc)
-    skeletonViewers[source] = targetSrc
-end)
-RegisterNetEvent('rsg-medic:server:unwatchSkeleton', function()
-    skeletonViewers[source] = nil
-end)
+local function IsMedic(Player, needDuty)
+    local job = Player and Player.PlayerData.job
+    if not job or not isMedicJob[job.name] then return false end
+    if needDuty and Config.RequireDuty and not job.onduty then return false end
+    return true
+end
 
-------------------------
--- use bandage
------------------------
-RSGCore.Functions.CreateUseableItem('bandage', function(source, item)
-    local src = source
-    TriggerClientEvent('rsg-medic:client:usebandage', src, item.name)
-end)
-RSGCore.Functions.CreateUseableItem('fieldbandage', function(source)
-    TriggerClientEvent('rsg-medic:client:usefieldbandage', source)
-end)
----------------------------------
--- medic storage
----------------------------------
-RegisterNetEvent('rsg-medic:server:openstash', function(location)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
-    local data = { label = locale('sv_medical_storage'), maxweight = Config.StorageMaxWeight, slots = Config.StorageMaxSlots }
-    local stashName = 'medic_' .. location
-    exports['rsg-inventory']:OpenInventory(src, stashName, data)
-end)
+local function IsDead(Player)
+    return Player and Player.PlayerData.metadata.isdead == true
+end
 
-----------------------------------
--- Admin Revive Player
-----------------------------------
-RSGCore.Commands.Add('revive', locale('sv_revive'), {{name = 'id', help = locale('sv_revive_2')}}, false, function(source, args)
-    local src = source
-
-    if not args[1] then
-        TriggerClientEvent('rsg-medic:client:adminRevive', src)
-        return
-    end
-
-    local Player = RSGCore.Functions.GetPlayer(tonumber(args[1]))
-    if not Player then
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_no_online'), type = 'error', duration = 7000 })
-        return
-    end
-
-    TriggerClientEvent('rsg-medic:client:adminRevive', Player.PlayerData.source)
-end, 'admin')
-
--- Admin Kill Player
-RSGCore.Commands.Add('kill', locale('sv_kill'), {{name = 'id', help = locale('sv_kill_id')}}, true, function(source, args)
-    local src = source
-    local target = tonumber(args[1])
-
-    local Player = RSGCore.Functions.GetPlayer(target)
-    if not Player then
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_no_online'), type = 'error', duration = 7000 })
-        return
-    end
-
-    TriggerClientEvent('rsg-medic:client:KillPlayer', Player.PlayerData.source)
-end, 'admin')
-
-RSGCore.Commands.Add('heal', locale('sv_heal'), {{name = 'id', help = locale('sv_heal_2')}}, false, function(source, args)
-    local src = source
-
-    if not args[1] then
-        TriggerClientEvent('rsg-medic:client:adminHeal', src)
-        return
-    end
-
-    local Player = RSGCore.Functions.GetPlayer(tonumber(args[1]))
-    if not Player then
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_no_online'), type = 'error', duration = 7000 })
-        return
-    end
-
-    TriggerClientEvent('rsg-medic:client:adminHeal', Player.PlayerData.source)
-end, 'admin')
-
-----------------------
--- EVENTS 
------------------------
--- Death Actions: Remove Inventory / Cash
-RegisterNetEvent('rsg-medic:server:deathactions', function()
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-
-    if Config.WipeInventoryOnRespawn then
-        Player.Functions.ClearInventory()
-        MySQL.Async.execute('UPDATE players SET inventory = ? WHERE citizenid = ?', { json.encode({}), Player.PlayerData.citizenid })
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_all'), type = 'info', duration = 7000 })
-    end
-
-    if Config.WipeCashOnRespawn then
-        Player.Functions.SetMoney('cash', 0)
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_cash'), type = 'info', duration = 7000 })
-    end
-    if Config.WipeBloodmoneyOnRespawn then
-        Player.Functions.SetMoney('bloodmoney', 0)
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_lost_bloodmoney'), type = 'info', duration = 7000 })
-    end
-end)
-
--- Medic Revive Player (with injury reset)
-RegisterNetEvent('rsg-medic:server:RevivePlayer', function(playerId)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    local Patient = RSGCore.Functions.GetPlayer(playerId)
-
-    if not Patient then return end
-
-    if Player.PlayerData.job.name ~= Config.JobRequired then
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_not_medic'), type = 'error', duration = 7000 })
-        return
-    end
-
-    if Player.Functions.RemoveItem('firstaid', 1) then
-        TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items['firstaid'], 'remove')
-        TriggerClientEvent('rsg-medic:client:playerRevive', Patient.PlayerData.source)
-
-        -- Reset all injuries on revive
-        local injuries = {}
-        for i = 1, #Config.InjuryBodyParts do
-            injuries[Config.InjuryBodyParts[i].name] = 'healthy'
-        end
-        Patient.Functions.SetMetaData('injuries', injuries)
-        TriggerClientEvent('rsg-medic:client:updateInjuries', Patient.PlayerData.source, Patient.PlayerData.source, injuries, (Patient.PlayerData.charinfo.firstname or 'Unknown') .. ' ' .. (Patient.PlayerData.charinfo.lastname or 'Patient'))
-        broadcastInjuryUpdate(Patient.PlayerData.source)
-    end
-end)
-
--- Medic Treat Wounds (with injury improvement)
-RegisterNetEvent('rsg-medic:server:TreatWounds', function(playerId)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    local Patient = RSGCore.Functions.GetPlayer(playerId)
-
-    if not Patient then return end
-
-    if Player.PlayerData.job.name ~= Config.JobRequired then
-        TriggerClientEvent('ox_lib:notify', src, {title = locale('sv_not_medic'), type = 'error', duration = 7000 })
-        return
-    end
-
-    if Player.Functions.RemoveItem('bandage', 1) then
-        TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items['bandage'], 'remove')
-        TriggerClientEvent('rsg-medic:client:HealInjuries', Patient.PlayerData.source)
-
-        -- Improve one injury level on treated player
-        local injuries = Patient.PlayerData.metadata['injuries']
-        if injuries then
-            local worstPart = nil
-            local worstState = 0
-            local order = { healthy = 0, injured = 1, broken = 2, bleeding = 3 }
-            for i = 1, #Config.InjuryBodyParts do
-                local partName = Config.InjuryBodyParts[i].name
-                local state = injuries[partName] or 'healthy'
-                if order[state] and order[state] > worstState then
-                    worstState = order[state]
-                    worstPart = partName
-                end
-            end
-            if worstPart then
-                local current = injuries[worstPart]
-                if current == 'bleeding' then injuries[worstPart] = 'broken'
-                elseif current == 'broken' then injuries[worstPart] = 'injured'
-                elseif current == 'injured' then injuries[worstPart] = 'healthy'
-                end
-                Patient.Functions.SetMetaData('injuries', injuries)
-                TriggerClientEvent('rsg-medic:client:updateInjuries', Patient.PlayerData.source, Patient.PlayerData.source, injuries, (Patient.PlayerData.charinfo.firstname or 'Unknown') .. ' ' .. (Patient.PlayerData.charinfo.lastname or 'Patient'))
-                broadcastInjuryUpdate(Patient.PlayerData.source)
-            end
-        end
-    end
-end)
-
--- Medic Alert
-RegisterNetEvent('rsg-medic:server:medicAlert', function(text)
-    local src = source
+local function PedCoords(src)
     local ped = GetPlayerPed(src)
-    local coords = GetEntityCoords(ped)
-    local players = RSGCore.Functions.GetRSGPlayers()
-
-    for _, v in pairs(players) do
-        if v.PlayerData.job.name == 'medic' and v.PlayerData.job.onduty then
-            TriggerClientEvent('rsg-medic:client:medicAlert', v.PlayerData.source, coords, text)
-        end
-    end
-end)
-RegisterNetEvent('rsg-medic:server:buyMedicItem', function(itemName, price)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
-
-    -- Job check
-    if Player.PlayerData.job.name ~= Config.JobRequired then
-        TriggerClientEvent('ox_lib:notify', src, { title = locale('sv_not_medic'), type = 'error', duration = 7000 })
-        return
-    end
-
-    -- Validate item exists in shop config
-    local validItem = false
-    for i = 1, #Config.MedicShopItems do
-        if Config.MedicShopItems[i].name == itemName then
-            validItem = true
-            price = Config.MedicShopItems[i].price -- use server-side price, never trust client
-            break
-        end
-    end
-
-    if not validItem then
-        TriggerClientEvent('ox_lib:notify', src, { title = 'Invalid item', type = 'error', duration = 5000 })
-        return
-    end
-
-    -- Charge if price > 0
-    if price > 0 then
-        if Player.PlayerData.money['cash'] < price then
-            TriggerClientEvent('ox_lib:notify', src, { title = 'Not enough cash', type = 'error', duration = 5000 })
-            return
-        end
-        Player.Functions.RemoveMoney('cash', price)
-    end
-
-    Player.Functions.AddItem(itemName, 1)
-    TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[itemName], 'add')
-end)
---------------------------
--- Medics On-Duty Callback
--------------------------
-RSGCore.Functions.CreateCallback('rsg-medic:server:getmedics', function(source, cb)
-    local amount = 0
-    local players = RSGCore.Functions.GetRSGPlayers()
-    for k, v in pairs(players) do
-        if v.PlayerData.job.name == Config.JobRequired and v.PlayerData.job.onduty then
-            amount = amount + 1
-        end
-    end
-    cb(amount)
-end)
-
----------------------------------
--- remove item
----------------------------------
-RegisterServerEvent('rsg-medic:server:removeitem', function(item, amount)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
-    Player.Functions.RemoveItem(item, amount)
-    TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[item], 'remove', amount)
-end)
-
--- Heal one self-injury on bandage/fieldbandage use
-RegisterServerEvent('rsg-medic:server:healSelfInjury', function()
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
-
-    local injuries = Player.PlayerData.metadata['injuries']
-    if not injuries then return end
-
-    local order = { healthy = 0, injured = 1, broken = 2, bleeding = 3 }
-    local worstPart, worstState = nil, -1
-    for i = 1, #Config.InjuryBodyParts do
-        local partName = Config.InjuryBodyParts[i].name
-        local state = injuries[partName] or 'healthy'
-        if (order[state] or 0) > worstState then
-            worstState = order[state] or 0
-            worstPart = partName
-        end
-    end
-
-    if worstPart and worstState > 0 then
-        local current = injuries[worstPart]
-        if current == 'bleeding' then injuries[worstPart] = 'broken'
-        elseif current == 'broken' then injuries[worstPart] = 'injured'
-        elseif current == 'injured' then injuries[worstPart] = 'healthy'
-        end
-        Player.Functions.SetMetaData('injuries', injuries)
-        TriggerClientEvent('rsg-medic:client:updateInjuries', src, src, injuries, (Player.PlayerData.charinfo.firstname or 'Unknown') .. ' ' .. (Player.PlayerData.charinfo.lastname or 'Patient'))
-        broadcastInjuryUpdate(src)
-        TriggerClientEvent('ox_lib:notify', src, {
-            title = 'Injury Improved',
-            description = 'Your ' .. worstPart:gsub('_', ' ') .. ' improved to ' .. injuries[worstPart],
-            type = 'success',
-            duration = 5000,
-        })
-    else
-        TriggerClientEvent('ox_lib:notify', src, {
-            title = 'No Injuries',
-            description = 'You have no injuries to treat',
-            type = 'info',
-            duration = 3000,
-        })
-    end
-end)
-
------------------------
--- INJURY SYSTEM
------------------------
-
--- Callback: Get player injuries
-RSGCore.Functions.CreateCallback('rsg-medic:server:getPlayerInjuries', function(source, cb, targetSrc)
-    local Player = RSGCore.Functions.GetPlayer(targetSrc)
-    if not Player then cb(nil) return end
-
-    local injuries = Player.PlayerData.metadata['injuries']
-    if not injuries then
-        injuries = {}
-        for i = 1, #Config.InjuryBodyParts do
-            injuries[Config.InjuryBodyParts[i].name] = 'healthy'
-        end
-        Player.Functions.SetMetaData('injuries', injuries)
-    end
-    local charinfo = Player.PlayerData.charinfo
-    local patientName = (charinfo.firstname or 'Unknown') .. ' ' .. (charinfo.lastname or 'Patient')
-    cb(injuries, patientName)
-end)
-
--- Limit injury notifications to once per 30 seconds per player
-local injuryNotifyCooldown = {}
-local function canNotifyInjury(src)
-    local now = os.time()
-    if not injuryNotifyCooldown[src] or now - injuryNotifyCooldown[src] > 30 then
-        injuryNotifyCooldown[src] = now
-        return true
-    end
-    return false
+    if not ped or ped == 0 then return nil end
+    return GetEntityCoords(ped)
 end
 
--- Event: Record weapon hit on a body part
-RegisterNetEvent('rsg-medic:server:recordBodyHit', function(bodyPart)
+local function Distance(a, b)
+    local ca, cb = PedCoords(a), PedCoords(b)
+    if not ca or not cb then return math.huge end
+    return #(ca - cb)
+end
+
+local function CharName(Player)
+    local c = Player.PlayerData.charinfo
+    return ('%s %s'):format(c.firstname, c.lastname)
+end
+
+local function ItemLabel(item)
+    local d = RSGCore.Shared.Items[item]
+    return d and d.label or item
+end
+
+local function HasItem(src, item)
+    if not item then return true end
+    return exports['rsg-inventory']:HasItem(src, item, 1)
+end
+
+local function GetOnDutyMedics()
+    local list = {}
+    for src, Player in pairs(RSGCore.Functions.GetRSGPlayers()) do
+        if IsMedic(Player, true) then list[#list + 1] = src end
+    end
+    return list
+end
+
+local function NearestLocation(src)
+    local coords = PedCoords(src)
+    local best, bestDist = Config.Locations[1], math.huge
+    if coords then
+        for _, loc in ipairs(Config.Locations) do
+            local d = #(coords - loc.point)
+            if d < bestDist then best, bestDist = loc, d end
+        end
+    end
+    return best
+end
+
+local function GetLocation(id)
+    for _, loc in ipairs(Config.Locations) do
+        if loc.id == id then return loc end
+    end
+end
+
+local function NearLocation(src, loc)
+    local c = PedCoords(src)
+    return c and loc and #(c - loc.point) <= 5.0
+end
+
+local function SetAlive(src, Player)
+    Player.Functions.SetMetaData('isdead', false)
+    deathTimes[src] = nil
+end
+
+local function Pay(src, Player, amount)
+    if amount and amount > 0 then
+        Player.Functions.AddMoney('cash', amount, 'rsg-medic-reward')
+        Notify(src, 'reward', 'success', amount)
+    end
+end
+
+---------------------------------
+-- death state
+---------------------------------
+RegisterNetEvent('rsg-medic:server:setDead', function()
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
-
-    local injuries = Player.PlayerData.metadata['injuries']
-    if not injuries then
-        injuries = {}
-        for i = 1, #Config.InjuryBodyParts do
-            injuries[Config.InjuryBodyParts[i].name] = 'healthy'
-        end
-    end
-
-    local oldState = injuries[bodyPart]
-    local newState
-
-    if not oldState or oldState == 'healthy' then
-        if math.random() < 0.5 then
-            newState = 'injured'
-        end
-    elseif oldState == 'injured' and math.random() < 0.35 then
-        newState = 'broken'
-    elseif oldState == 'broken' and math.random() < 0.2 then
-        newState = 'bleeding'
-    end
-
-    if newState and newState ~= oldState then
-        injuries[bodyPart] = newState
-        Player.Functions.SetMetaData('injuries', injuries)
-        TriggerClientEvent('rsg-medic:client:updateInjuries', src, src, injuries, (Player.PlayerData.charinfo.firstname or 'Unknown') .. ' ' .. (Player.PlayerData.charinfo.lastname or 'Patient'))
-        broadcastInjuryUpdate(src)
-        if canNotifyInjury(src) then
-            TriggerClientEvent('ox_lib:notify', src, {
-                title = 'Injury',
-                description = 'Your ' .. bodyPart:gsub('_', ' ') .. ' is now ' .. newState,
-                type = 'error',
-                duration = 5000,
-            })
-        end
-    end
+    if not Player or IsDead(Player) then return end
+    Player.Functions.SetMetaData('isdead', true)
+    deathTimes[src] = os.time()
 end)
 
--- Event: Apply random death injuries
-RegisterNetEvent('rsg-medic:server:applyDeathInjuries', function()
+lib.callback.register('rsg-medic:server:getDeathInfo', function(src)
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if IsDead(Player) and not deathTimes[src] then deathTimes[src] = os.time() end -- reconnect / restart
+    local remaining = 0
+    if deathTimes[src] then
+        remaining = math.max(0, Config.DeathTimer - (os.time() - deathTimes[src]))
+    end
+    return { remaining = remaining, medics = #GetOnDutyMedics() }
+end)
+
+RegisterNetEvent('rsg-medic:server:respawn', function()
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
+    if not IsDead(Player) then return end
 
-    local injuries = {}
-    local injuredParts = {}
-    for i = 1, #Config.InjuryBodyParts do
-        local part = Config.InjuryBodyParts[i]
-        local rand = math.random()
-        if rand < 0.15 then
-            injuries[part.name] = 'bleeding'
-            injuredParts[#injuredParts+1] = part.name:gsub('_', ' ') .. ' (bleeding)'
-        elseif rand < 0.4 then
-            injuries[part.name] = 'broken'
-            injuredParts[#injuredParts+1] = part.name:gsub('_', ' ') .. ' (broken)'
-        elseif rand < 0.7 then
-            injuries[part.name] = 'injured'
-            injuredParts[#injuredParts+1] = part.name:gsub('_', ' ') .. ' (injured)'
+    local downedAt = deathTimes[src]
+    if not downedAt or os.time() - downedAt < Config.DeathTimer then return end
+
+    local fee = Config.RespawnFee
+    if fee > 0 then
+        if Player.Functions.GetMoney('cash') >= fee then
+            Player.Functions.RemoveMoney('cash', fee, 'rsg-medic-respawn')
+        elseif Player.Functions.GetMoney('bank') >= fee then
+            Player.Functions.RemoveMoney('bank', fee, 'rsg-medic-respawn')
         else
-            injuries[part.name] = 'healthy'
+            fee = 0
         end
     end
-    Player.Functions.SetMetaData('injuries', injuries)
-    TriggerClientEvent('rsg-medic:client:updateInjuries', src, src, injuries, (Player.PlayerData.charinfo.firstname or 'Unknown') .. ' ' .. (Player.PlayerData.charinfo.lastname or 'Patient'))
-    broadcastInjuryUpdate(src)
 
-    if #injuredParts > 0 then
-        TriggerClientEvent('ox_lib:notify', src, {
-            title = 'You have sustained injuries',
-            description = table.concat(injuredParts, ', '),
-            type = 'error',
-            duration = 7000,
-        })
-    end
+    SetAlive(src, Player)
+    local loc = NearestLocation(src)
+    TriggerClientEvent('rsg-medic:client:revive', src, loc.spawn)
+    Notify(src, 'respawned', 'inform')
+    if fee > 0 then Notify(src, 'respawn_fee', 'inform', fee) end
 end)
 
--- Event: Reset injuries to healthy
-RegisterNetEvent('rsg-medic:server:resetPlayerInjuries', function()
+RegisterNetEvent('rsg-medic:server:alert', function()
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player then return end
+    if not IsDead(Player) then return end
 
-    local injuries = {}
-    for i = 1, #Config.InjuryBodyParts do
-        injuries[Config.InjuryBodyParts[i].name] = 'healthy'
+    local now = os.time()
+    if alertTimes[src] and now - alertTimes[src] < Config.AlertCooldown then
+        return Notify(src, 'alert_cooldown', 'error', Config.AlertCooldown - (now - alertTimes[src]))
     end
-    Player.Functions.SetMetaData('injuries', injuries)
-    TriggerClientEvent('rsg-medic:client:updateInjuries', src, src, injuries, (Player.PlayerData.charinfo.firstname or 'Unknown') .. ' ' .. (Player.PlayerData.charinfo.lastname or 'Patient'))
-    broadcastInjuryUpdate(src)
+
+    local medics = GetOnDutyMedics()
+    if #medics == 0 then return Notify(src, 'no_medics', 'error') end
+
+    local coords = PedCoords(src)
+    if not coords then return end
+    alertTimes[src] = now
+
+    for _, medic in ipairs(medics) do
+        TriggerClientEvent('rsg-medic:client:alert', medic, coords)
+    end
+    Notify(src, 'alert_sent', 'success')
+    TriggerClientEvent('rsg-medic:client:alertSent', src, Config.AlertCooldown)
 end)
 
--- Event: Open skeleton for specific player (admin test)
-RegisterNetEvent('rsg-medic:server:openSkeletonAdmin', function(targetSrc)
-    local src = source
-    local Player = RSGCore.Functions.GetPlayer(targetSrc)
-    if not Player then
-        TriggerClientEvent('ox_lib:notify', src, { title = 'Player not found', type = 'error' })
-        return
+---------------------------------
+-- doctor's office
+---------------------------------
+lib.callback.register('rsg-medic:server:getMenu', function(src, locId)
+    local Player = RSGCore.Functions.GetPlayer(src)
+    local loc = GetLocation(locId)
+    if not IsMedic(Player) or not NearLocation(src, loc) then return nil end
+
+    local items = {}
+    for _, s in ipairs(Config.Supplies) do
+        items[#items + 1] = { item = s.item, label = ItemLabel(s.item), price = s.price }
     end
 
-    local injuries = Player.PlayerData.metadata['injuries']
-    if not injuries then
-        injuries = {}
-        for i = 1, #Config.InjuryBodyParts do
-            injuries[Config.InjuryBodyParts[i].name] = 'healthy'
-        end
-        Player.Functions.SetMetaData('injuries', injuries)
-    end
-
-    TriggerClientEvent('rsg-medic:client:openSkeletonNUI', src, injuries, (Player.PlayerData.charinfo.firstname or 'Unknown') .. ' ' .. (Player.PlayerData.charinfo.lastname or 'Patient'), targetSrc)
+    local job = Player.PlayerData.job
+    return {
+        location = loc.label,
+        onduty   = job.onduty,
+        isBoss   = job.isboss == true and Config.BossMenuEvent ~= nil,
+        items    = items,
+    }
 end)
 
------------------------
--- TEST COMMANDS
------------------------
-RSGCore.Commands.Add('setinjury', 'Set a player\'s injury (Admin Test)', {
-    { name = 'bodypart', help = 'head/torso/left_arm/right_arm/left_leg/right_leg/all' },
-    { name = 'state', help = 'healthy/injured/broken/bleeding' },
-    { name = 'id', help = 'Player ID (optional)' },
-}, false, function(source, args)
+RegisterNetEvent('rsg-medic:server:toggleDuty', function()
     local src = source
-    local target = src
-    if args[3] then
-        local Target = RSGCore.Functions.GetPlayer(tonumber(args[3]))
-        if Target then target = Target.PlayerData.source end
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not IsMedic(Player) or not NearLocation(src, NearestLocation(src)) then return end
+    local onduty = not Player.PlayerData.job.onduty
+    Player.Functions.SetJobDuty(onduty)
+    TriggerClientEvent('RSGCore:Client:SetDuty', src, onduty)
+    Notify(src, onduty and 'on_duty' or 'off_duty', 'inform')
+end)
+
+RegisterNetEvent('rsg-medic:server:buy', function(item, amount)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not IsMedic(Player, true) then return Notify(src, 'not_on_duty', 'error') end
+    if not NearLocation(src, NearestLocation(src)) then return end
+
+    amount = math.floor(tonumber(amount) or 0)
+    if amount < 1 or amount > Config.MaxBuyAmount then return Notify(src, 'invalid_amount', 'error') end
+
+    local price
+    for _, s in ipairs(Config.Supplies) do
+        if s.item == item then price = s.price break end
     end
+    if not price or not RSGCore.Shared.Items[item] then return end
 
-    local Player = RSGCore.Functions.GetPlayer(target)
-    if not Player then return end
+    local total = price * amount
+    if Player.Functions.GetMoney('cash') < total then return Notify(src, 'no_money', 'error') end
+    if not exports['rsg-inventory']:CanAddItem(src, item, amount) then return Notify(src, 'inventory_full', 'error') end
 
-    local injuries = Player.PlayerData.metadata['injuries']
-    if not injuries then
-        injuries = {}
-        for i = 1, #Config.InjuryBodyParts do
-            injuries[Config.InjuryBodyParts[i].name] = 'healthy'
+    if Player.Functions.RemoveMoney('cash', total, 'rsg-medic-supplies') then
+        exports['rsg-inventory']:AddItem(src, item, amount, nil, nil, 'rsg-medic-supplies')
+        TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[item], 'add', amount)
+        Notify(src, 'bought', 'success', amount, ItemLabel(item), total)
+    end
+end)
+
+RegisterNetEvent('rsg-medic:server:openStash', function()
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not IsMedic(Player, true) then return Notify(src, 'not_on_duty', 'error') end
+    local loc = NearestLocation(src)
+    if not NearLocation(src, loc) then return end
+    exports['rsg-inventory']:OpenInventory(src, 'medic_' .. loc.id, {
+        label = loc.label, maxweight = Config.Stash.maxweight, slots = Config.Stash.slots,
+    })
+end)
+
+---------------------------------
+-- field medicine
+---------------------------------
+lib.callback.register('rsg-medic:server:getPatients', function(src)
+    local Medic = RSGCore.Functions.GetPlayer(src)
+    if not IsMedic(Medic, true) then return nil end
+
+    local list = {}
+    for id, Player in pairs(RSGCore.Functions.GetRSGPlayers()) do
+        if id ~= src then
+            local d = Distance(src, id)
+            if d <= Config.FieldRange then
+                list[#list + 1] = { id = id, name = CharName(Player), dead = IsDead(Player), dist = d }
+            end
         end
     end
+    table.sort(list, function(a, b) return a.dist < b.dist end)
+    return list
+end)
 
-    local bodyPart = args[1]
-    local state = args[2] or 'healthy'
+-- step 1: validate and open a timed action
+lib.callback.register('rsg-medic:server:beginAction', function(src, kind, target)
+    local Medic = RSGCore.Functions.GetPlayer(src)
+    if kind ~= 'revive' and kind ~= 'treat' then return false end
+    if not IsMedic(Medic, true) then Notify(src, 'not_on_duty', 'error') return false end
+    if pending[src] then Notify(src, 'busy', 'error') return false end
 
-    if bodyPart == 'all' then
-        for i = 1, #Config.InjuryBodyParts do
-            injuries[Config.InjuryBodyParts[i].name] = state
-        end
+    target = tonumber(target)
+    local Patient = target and RSGCore.Functions.GetPlayer(target)
+    if not Patient or target == src then Notify(src, 'no_patient', 'error') return false end
+    if Distance(src, target) > Config.ActionDistance then Notify(src, 'patient_too_far', 'error') return false end
+
+    local cfg = kind == 'revive' and Config.Revive or Config.Treat
+    if kind == 'revive' and not IsDead(Patient) then Notify(src, 'patient_not_dead', 'error') return false end
+    if kind == 'treat' and IsDead(Patient) then Notify(src, 'patient_dead', 'error') return false end
+    if not HasItem(src, cfg.item) then Notify(src, 'need_item', 'error', ItemLabel(cfg.item)) return false end
+
+    pending[src] = { target = target, kind = kind, start = GetGameTimer(), duration = cfg.duration }
+    return cfg.duration
+end)
+
+RegisterNetEvent('rsg-medic:server:cancelAction', function()
+    pending[source] = nil
+end)
+
+-- step 2: progress bar finished, re-validate and apply
+RegisterNetEvent('rsg-medic:server:finishAction', function()
+    local src = source
+    local p = pending[src]
+    pending[src] = nil
+    if not p then return end
+    if GetGameTimer() - p.start < p.duration - 500 then return end
+
+    local Medic   = RSGCore.Functions.GetPlayer(src)
+    local Patient = RSGCore.Functions.GetPlayer(p.target)
+    if not IsMedic(Medic, true) or not Patient then return end
+    if Distance(src, p.target) > Config.ActionDistance + 1.0 then return Notify(src, 'patient_too_far', 'error') end
+
+    if p.kind == 'revive' then
+        if not IsDead(Patient) then return end
+        if not HasItem(src, Config.Revive.item) then return Notify(src, 'need_item', 'error', ItemLabel(Config.Revive.item)) end
+        SetAlive(p.target, Patient)
+        TriggerClientEvent('rsg-medic:client:revive', p.target)
+        Notify(p.target, 'you_were_revived', 'success')
+        Notify(src, 'revived_patient', 'success', CharName(Patient))
+        Pay(src, Medic, Config.Revive.reward)
     else
-        injuries[bodyPart] = state
-    end
-
-    Player.Functions.SetMetaData('injuries', injuries)
-    broadcastInjuryUpdate(target or src)
-    TriggerClientEvent('ox_lib:notify', src, { title = 'Injury Set', description = bodyPart .. ' -> ' .. state, type = 'success' })
-end, 'admin')
-
-RSGCore.Commands.Add('checkskeleton', 'Open skeleton UI for a player (Admin Test)', {
-    { name = 'id', help = 'Player ID' },
-}, false, function(source, args)
-    local src = source
-    local target = tonumber(args[1])
-    if not target then
-        TriggerClientEvent('ox_lib:notify', src, { title = 'Usage: /checkskeleton [id]', type = 'error' })
-        return
-    end
-
-    local Player = RSGCore.Functions.GetPlayer(target)
-    if not Player then
-        TriggerClientEvent('ox_lib:notify', src, { title = 'Player not found', type = 'error' })
-        return
-    end
-
-    local injuries = Player.PlayerData.metadata['injuries']
-    if not injuries then
-        injuries = {}
-        for i = 1, #Config.InjuryBodyParts do
-            injuries[Config.InjuryBodyParts[i].name] = 'healthy'
+        if IsDead(Patient) then return end
+        local item = Config.Treat.item
+        if item then
+            if not exports['rsg-inventory']:RemoveItem(src, item, 1, nil, 'rsg-medic-treat') then
+                return Notify(src, 'need_item', 'error', ItemLabel(item))
+            end
+            TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[item], 'remove', 1)
         end
-        Player.Functions.SetMetaData('injuries', injuries)
+        TriggerClientEvent('rsg-medic:client:heal', p.target, -1) -- -1 = full health
+        Notify(p.target, 'you_were_treated', 'success')
+        Notify(src, 'treated_patient', 'success', CharName(Patient))
+        Pay(src, Medic, Config.Treat.reward)
     end
+end)
 
-    TriggerClientEvent('rsg-medic:client:openSkeletonNUI', src, injuries, (Player.PlayerData.charinfo.firstname or 'Unknown') .. ' ' .. (Player.PlayerData.charinfo.lastname or 'Patient'), target)
+---------------------------------
+-- bandage (anyone)
+---------------------------------
+RSGCore.Functions.CreateUseableItem(Config.Bandage.item, function(source)
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player or IsDead(Player) then return end
+    TriggerClientEvent('rsg-medic:client:useBandage', src)
+end)
+
+RegisterNetEvent('rsg-medic:server:bandageDone', function()
+    local src = source
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player or IsDead(Player) then return end
+
+    local now = GetGameTimer()
+    if actionCD[src] and now - actionCD[src] < Config.Bandage.duration then return end
+    actionCD[src] = now
+
+    if not exports['rsg-inventory']:RemoveItem(src, Config.Bandage.item, 1, nil, 'rsg-medic-bandage') then return end
+    TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[Config.Bandage.item], 'remove', 1)
+    TriggerClientEvent('rsg-medic:client:heal', src, Config.Bandage.heal)
+    Notify(src, 'bandaged', 'success')
+end)
+
+-- server-only revive in place (used by the auto medic; not callable by clients)
+AddEventHandler('rsg-medic:server:reviveInPlace', function(src)
+    local Player = RSGCore.Functions.GetPlayer(src)
+    if not IsDead(Player) then return end
+    SetAlive(src, Player)
+    TriggerClientEvent('rsg-medic:client:revive', src)
+end)
+
+---------------------------------
+-- admin
+---------------------------------
+RSGCore.Commands.Add('revive', locale('cmd_revive_help'), { { name = 'id', help = locale('cmd_revive_arg') } }, false, function(source, args)
+    local target = tonumber(args[1]) or source
+    local Player = RSGCore.Functions.GetPlayer(target)
+    if not Player then return Notify(source, 'player_not_found', 'error') end
+    SetAlive(target, Player)
+    TriggerClientEvent('rsg-medic:client:revive', target)
+    if source > 0 then Notify(source, 'admin_revived', 'success', target) end
 end, 'admin')
+
+---------------------------------
+-- cleanup
+---------------------------------
+AddEventHandler('playerDropped', function()
+    local src = source
+    deathTimes[src], alertTimes[src], pending[src], actionCD[src] = nil, nil, nil, nil
+end)

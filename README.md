@@ -1,140 +1,75 @@
-<img width="2948" height="497" alt="rsg_framework" src="https://github.com/user-attachments/assets/638791d8-296d-4817-a596-785325c1b83a" />
+# rsg-medic
 
-# 🏥 rsg-medic
-**Complete medical and revive system for RedM using RSG Core.**
+Death system and doctor job for the RSG Framework (RedM), with a custom NUI in the RDR2 leather & gold theme.
 
-![Platform](https://img.shields.io/badge/platform-RedM-darkred)
-![License](https://img.shields.io/badge/license-GPL--3.0-green)
+## Features
 
-> Advanced Medic system for RSG.  
-> Includes full revive, heal, death timer, GPS call system, and medical stash support.
+**Death**
+- Downed players see a death screen with a bleed-out timer, the number of doctors on duty and the respawn fee
+- `[G]` call for a doctor (cooldown, sends a map blip to on-duty doctors)
+- `[E]` wake up at the nearest doctor once the timer runs out (fee taken from cash, then bank)
+- Death state is saved in player metadata, so logging out while downed doesn't revive you
 
----
+**Doctor job**
+- Hold `[E]` at a doctor's office: clock in/out, buy supplies, shared medicine cabinet (stash), management (boss grades)
+- `/medic` field menu: lists nearby patients with health bars and unconscious status, revive or treat with one click
+- Revive needs a medical bag; treating uses a bandage; both pay the doctor a configurable fee
 
-## 🛠️ Dependencies
-- [**rsg-core**](https://github.com/Rexshack-RedM/rsg-core) 🤠  
-- [**ox_lib**](https://github.com/Rexshack-RedM/ox_lib) ⚙️ *(prompts & notifications)*  
-- [**rsg-inventory**](https://github.com/Rexshack-RedM/rsg-inventory) 🎒 *(Medic stash & bandage itMedic)*  
-- [**oxmysql**](https://github.com/Rexshack-RedM/oxmysql) 🗄️ *(data persistence)*  
+**Auto medic (NPC doctor)**
+- Downed players can type `/automedic`; an NPC doctor rides in on horseback, dismounts, treats and revives them where they lie, then rides off and despawns
+- Only available when few/no doctors are on duty (`Config.AutoMedic.MaxMedicsOnDuty`), with a fee and cooldown
+- Revive is done server-side and validated (must be downed, active call, minimum treatment time)
+- Optional Discord webhook logging — set URLs in `server/sv_config.lua` (server-only, never sent to clients)
+- Export: `exports['rsg-medic']:SendAutomedicLog(event, source, fields, description)`
 
-**Locales:** `en`, `fr`, `es`, `el`, `it`, `pt-br`, `ro`  
-**SQL:** No additional tables required (uses `rsg-core` player data).
+**Everyone**
+- Useable `bandage` item heals a set amount
+- Admin `/revive [id]`
 
----
+**Security**
+- All revives, heals, respawns, purchases and stash access are checked on the server (job, duty, distance, items, money, inventory space)
+- Revive/treat use a server-timed session, so skipping the progress bar doesn't work
+- Respawn timer is tracked server-side
 
-## ✨ Features
+## Dependencies
 
-### ⚰️ Death & Respawn
-- Player falls into **downed state** before dying.
-- Automatic respawn after configurable delay (`Config.DeathTimer`).
-- Respawn location configurable (default: Saint Denis Hospital).
-- Revive via **[E] prompt** or **Medic intervention**.
-- Configurable wipe options:
-  - `Config.WipeInventoryOnRespawn`
-  - `Config.WipeCashOnRespawn`
-  - `Config.WipeBloodmoneyOnRespawn`
+- [rsg-core](https://github.com/Rexshack-RedM/rsg-core)
+- [rsg-inventory](https://github.com/Rexshack-RedM/rsg-inventory)
+- [ox_lib](https://github.com/overextended/ox_lib)
+- Optional: `rsg-bossmenu` for the management button
 
-### ❤️ Medic Job
-- Only players with job = `'medic'` can access Medic actions.
-- Full revive and heal functionality with progress bar.
-- GPS route auto‑enabled to emergency calls (`Config.AddGPSRoute`).
-- Custom inventory/stash for Medic job (weight & slot limits).
+## Installation
 
-### 💉 Healing
-- `/heal <id>`: heals a player instantly (admin command).
-- `bandage` item heals partially over time.
-- Configurable healing amount and animation duration.
+1. Put `rsg-medic` in your resources folder. The auto medic is built in, so remove `rex-automedic` if you have it. If you use another death/medic script, remove it — only one should handle death.
+2. Add the items from `installation/shared_items.lua` to `rsg-core/shared/items.lua` (skip any that exist), and add `bandage.png` / `medicalbag.png` to `rsg-inventory/html/images/`.
+3. Make sure a `medic` job exists in `rsg-core/shared/jobs.lua` (or change `Config.MedicJobs`).
+4. Add `ensure rsg-medic` to `server.cfg` after `rsg-core`, `rsg-inventory` and `ox_lib`.
+5. Check the coordinates in `Config.Locations` on your map and adjust as needed.
 
-### ⚡ Reviving
-- `/revive <id>`: admin revive command.
-- Medic can manually revive nearby players.
-- Revived players regain partial health:
-  - `Config.ReviveHealth` for [E] revive
-  - `Config.MedicReviveHealth` for Medic revive
+## Configuration
 
-### 🚨 Emergency Calls
-- Players can send **medical distress calls** to all online medics.
-- Calls have a cooldown (`Config.MedicCallDelay`) to prevent spam.
-- GPS marker automatically attached for medics if `Config.AddGPSRoute = true`.
+Everything is in `shared/config.lua`:
 
-### 💼 Medic Storage
-- Configurable stash for Medic use (via `rsg-inventory`).
-- Adjustable slot & weight limits:
-  ```lua
-  Config.StorageMaxWeight = 4000000
-  Config.StorageMaxSlots = 48
-  ```
+| Option | What it does |
+|--------|--------------|
+| `MedicJobs`, `RequireDuty` | Which jobs count as doctors and whether they must be on duty |
+| `DeathTimer`, `RespawnFee` | Bleed-out time (seconds) and hospital fee |
+| `AlertCooldown`, `AlertBlipTime` | Call-for-doctor cooldown and how long the blip lasts |
+| `Keys` | Respawn, alert and office prompt keys |
+| `ActionDistance`, `FieldRange`, `FieldCommand` | Revive/treat range, field menu range and command |
+| `Revive`, `Treat`, `Bandage` | Durations, items and rewards |
+| `Supplies`, `MaxBuyAmount` | Items doctors can buy and the max per purchase |
+| `Stash`, `BossMenuEvent` | Medicine cabinet size and the boss menu client event |
+| `AutoMedic` | NPC doctor: command, fee, cooldown, medic limit, models, distances, timings, blip |
+| `Locations` | Office prompt point and respawn position per doctor |
 
----
+## Events for other scripts
 
-## ⚙️ Configuration
+- Server → client `rsg-medic:client:revive` (optional `vec4` spawn) — revive a player. Also clear `isdead` metadata on the server.
+- Server → client `rsg-medic:client:heal` (amount, `-1` = full)
 
-```lua
-Config.Debug = false -- Enable/disable debug logs
+## Locales
 
--- Job
-Config.JobRequired = 'medic'
+All text, including the NUI, is in `locales/en.json` (UI strings use the `ui_` prefix). To add a language, copy it to `locales/<code>.json`, translate the values, and set `setr ox:locale <code>`.
 
--- Storage
-Config.StorageMaxWeight = 4000000
-Config.StorageMaxSlots = 48
-
--- Death System
-Config.DeathTimer = 300 -- seconds
-Config.WipeInventoryOnRespawn = false
-Config.WipeCashOnRespawn = false
-Config.WipeBloodmoneyOnRespawn = false
-
--- Health
-Config.MaxHealth = 600
-Config.MedicReviveTime = 5000 -- ms
-Config.MedicTreatTime = 5000 -- ms
-Config.MedicTreatHealth = 30 -- percent
-Config.ReviveHealth = 20 -- player revive
-Config.MedicReviveHealth = 60 -- Medic revive
-
--- Calls & GPS
-Config.AddGPSRoute = true
-Config.MedicCallDelay = 60 -- seconds cooldown between calls
-
--- Bandages
-Config.BandageTime = 10000 -- ms
-Config.BandageHealth = 15 -- percent restored
-```
-
----
-
-## 🧭 Example Usage
-
-| Command | Description |
-|----------|--------------|
-| `/revive <id>` | Revives a dead player (admin) |
-| `/heal <id>` | Heals a player to full health (admin) |
-
-
----
-
-## 📂 Installation
-1. Place `rsg-medic` in your `resources/[rsg]` folder.  
-2. Ensure `rsg-core`, `rsg-inventory`, `ox_lib`, and `oxmysql` are installed.  
-3. Add to your `server.cfg`:
-   ```cfg
-   ensure ox_lib
-   ensure rsg-core
-   ensure rsg-inventory
-   ensure rsg-medic
-   ```
-4. Restart your server.
-
----
-
-## 🌍 Locales
-Included: `en`, `fr`, `es`, `el`, `it`, `pt-br`, `ro`  
-Loaded automatically using `lib.locale()`.
-
----
-
-## 💎 Credits
-- **RSG / Rexshack-RedM** — core framework and Medic system  
-- Community testers and translators  
-- License: GPL‑3.0  
+Auto medic strings use the `am_` prefix and ship in de, el, es, fr, ja, nl, pl, pt-br and ro; other text in those languages falls back to English.

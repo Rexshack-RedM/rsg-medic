@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+    <!-- death screen (no focus) -->
+    <div id="edit-hint" class="edit-hint hidden">
+        <span data-l="ui_edit_hint"></span>
+        <button id="edit-done" class="edit-btn" data-l="ui_edit_done"></button>
+    </div>
+    <section id="death" class="panel death hidden">
+        <header class="panel-header">
+            <div class="titles">
+                <h1 data-l="ui_death_title"></h1>
+                <p class="subtitle" data-l="ui_death_sub"></p>
+            </div>
+        </header>
+        <div class="divider"><span>✦</span></div>
+        <div class="death-timer">
+            <div class="row-label"><span id="death-label"></span><span id="death-time" class="timer"></span></div>
+            <div class="track"><div id="death-fill" class="fill stat-bad"></div></div>
+        </div>
+        <div class="death-info">
+            <div class="info-cell"><span class="row-label" data-l="ui_medics_online"></span><span id="death-medics" class="big">0</span></div>
+            <div class="info-cell"><span class="row-label" data-l="ui_fee"></span><span id="death-fee" class="big">$0</span></div>
+        </div>
+        <div id="am-status" class="am-status hidden">
+            <div class="row-label"><span data-l="ui_am_title"></span><span id="am-dist" class="timer"></span></div>
+            <div class="am-steps">
+                <span data-step="1" data-l="ui_am_step_dispatch"></span>
+                <span data-step="2" data-l="ui_am_step_ride"></span>
+                <span data-step="3" data-l="ui_am_step_arrive"></span>
+                <span data-step="4" data-l="ui_am_step_treat"></span>
+            </div>
+            <div id="am-text" class="am-text"></div>
+            <div class="track"><div id="am-fill" class="fill stat-good"></div></div>
+        </div>
+        <div class="keys">
+            <div id="key-respawn" class="key disabled" data-l="ui_respawn_key"></div>
+            <div id="key-alert" class="key"></div>
+        </div>
+    </section>
+
+    <!-- doctor's office -->
+    <section id="menu" class="panel hidden">
+        <header class="panel-header">
+            <span class="circle-btn invisible"></span>
+            <div class="titles">
+                <h1 id="menu-title"></h1>
+                <p class="subtitle" data-l="ui_menu_sub"></p>
+            </div>
+            <button class="circle-btn" data-close>✕</button>
+        </header>
+
+        <div class="divider"><span data-l="ui_duty"></span></div>
+        <div class="row static">
+            <div class="badge-icon">⚕</div>
+            <div class="row-body">
+                <div class="row-title" id="duty-state"></div>
+            </div>
+            <button class="wood-btn" id="duty-btn"></button>
+        </div>
+
+        <div class="divider"><span data-l="ui_supplies"></span></div>
+        <div id="supplies" class="list"></div>
+
+        <div class="divider"><span data-l="ui_office"></span></div>
+        <div class="list">
+            <div class="row" id="stash-row">
+                <div class="badge-icon">▤</div>
+                <div class="row-body">
+                    <div class="row-title" data-l="ui_stash"></div>
+                    <div class="row-desc" data-l="ui_stash_desc"></div>
+                </div>
+            </div>
+            <div class="row hidden" id="boss-row">
+                <div class="badge-icon">♛</div>
+                <div class="row-body">
+                    <div class="row-title" data-l="ui_boss"></div>
+                    <div class="row-desc" data-l="ui_boss_desc"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- field menu -->
+    <section id="field" class="panel hidden">
+        <header class="panel-header">
+            <button class="circle-btn" id="field-refresh" title="">⟳</button>
+            <div class="titles">
+                <h1 data-l="ui_field_title"></h1>
+                <p class="subtitle" data-l="ui_field_sub"></p>
+            </div>
+            <button class="circle-btn" data-close>✕</button>
+        </header>
+        <div class="divider"><span>✦</span></div>
+        <div id="patients" class="list"></div>
+    </section>
+
+    <!-- buy modal -->
+    <div id="modal-wrap" class="modal-wrap hidden">
+        <div class="panel modal">
+            <h2 id="modal-title"></h2>
+            <div class="ink-divider"></div>
+            <label class="row-label" data-l="ui_amount"></label>
+            <input id="modal-amount" type="number" min="1" value="1">
+            <div class="row-label total"><span data-l="ui_total"></span><span id="modal-total"></span></div>
+            <div class="actions">
+                <button class="wood-btn muted" id="modal-cancel" data-l="ui_cancel"></button>
+                <button class="wood-btn" id="modal-confirm" data-l="ui_confirm"></button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>
