@@ -39,7 +39,7 @@ Config.FieldCommand   = 'medic'  -- opens the field menu for on-duty medics
 
 Config.Revive = {
     duration = 10000,            -- ms
-    item     = 'medicalbag',     -- required (not consumed); nil = none
+    item     = 'tool_medicalbag',     -- required (not consumed); nil = none
     reward   = 10,               -- cash paid to the medic; 0 = none
 }
 
@@ -60,7 +60,7 @@ Config.Bandage = {               -- self-use bandage item for anyone
 ---------------------------------
 Config.Supplies = {
     { item = 'bandage',    price = 1 },
-    { item = 'medicalbag', price = 15 },
+    { item = 'tool_medicalbag', price = 15 },
 }
 Config.MaxBuyAmount = 50
 
