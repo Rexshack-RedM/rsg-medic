@@ -140,7 +140,15 @@ end
 
 CreateThread(function()
     while true do
-        if not isDead and LocalPlayer.state.isLoggedIn and IsEntityDead(cache.ped) then OnDeath() end
+        if not isDead and LocalPlayer.state.isLoggedIn and not LocalPlayer.state.isLoadingSkin then
+            -- use the live ped: a model swap (/loadskin) leaves cache.ped pointing at the old, deleted ped
+            local ped = PlayerPedId()
+            if DoesEntityExist(ped) and IsEntityDead(ped) then
+                Wait(500) -- confirm, so a brief ped swap can't trigger the death screen
+                ped = PlayerPedId()
+                if not LocalPlayer.state.isLoadingSkin and DoesEntityExist(ped) and IsEntityDead(ped) then OnDeath() end
+            end
+        end
         Wait(isDead and 1000 or 500)
     end
 end)

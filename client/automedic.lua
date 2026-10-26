@@ -36,7 +36,7 @@ local function isPlayerDead()
     if PlayerData and PlayerData.metadata and PlayerData.metadata['isdead'] then
         debug('dead via metadata') return true
     end
-    local ped = cache.ped or PlayerPedId()
+    local ped = PlayerPedId()
     if IsEntityDead(ped) or GetEntityHealth(ped) <= 0 then
         debug('dead via native') return true
     end
