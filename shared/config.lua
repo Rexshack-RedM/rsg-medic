@@ -39,7 +39,8 @@ Config.FieldCommand   = 'medic'  -- opens the field menu for on-duty medics
 
 Config.Revive = {
     duration = 10000,            -- ms
-    item     = 'tool_medicalbag',     -- required (not consumed); nil = none
+    item     = 'tool_medicalbag', -- required; nil = none
+    uses     = 10,               -- revives per medical bag (one used per revive); 0 = unlimited
     reward   = 10,               -- cash paid to the medic; 0 = none
 }
 

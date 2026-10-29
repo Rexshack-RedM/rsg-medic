@@ -99,6 +99,33 @@ local function Pay(src, Player, amount)
     end
 end
 
+-- medical bag uses: stored in item info as `uses`; a bag with no info is full
+local function UseReviveItem(src)
+    local item, max = Config.Revive.item, Config.Revive.uses or 0
+    if not item or max <= 0 then return true end
+    local bag = exports['rsg-inventory']:GetItemByName(src, item)
+    if not bag then return false end
+    local info = type(bag.info) == 'table' and bag.info or {}
+    local left = (tonumber(info.uses) or max) - 1
+    if left <= 0 then
+        exports['rsg-inventory']:RemoveItem(src, item, 1, bag.slot, 'rsg-medic-bag-empty')
+        TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[item], 'remove', 1)
+        Notify(src, 'bag_empty', 'inform')
+        -- a stacked slot shares info: the next bag in it starts full
+        local next = exports['rsg-inventory']:GetItemBySlot(src, bag.slot)
+        if next and next.name == item then
+            local ni = type(next.info) == 'table' and next.info or {}
+            ni.uses = max
+            exports['rsg-inventory']:SetItemInfo(src, bag.slot, ni)
+        end
+    else
+        info.uses = left
+        exports['rsg-inventory']:SetItemInfo(src, bag.slot, info)
+        Notify(src, 'bag_uses', 'inform', left, max)
+    end
+    return true
+end
+
 ---------------------------------
 -- death state
 ---------------------------------
@@ -222,7 +249,8 @@ RegisterNetEvent('rsg-medic:server:buy', function(item, amount)
     if not exports['rsg-inventory']:CanAddItem(src, item, amount) then return Notify(src, 'inventory_full', 'error') end
 
     if Player.Functions.RemoveMoney('cash', total, 'rsg-medic-supplies') then
-        exports['rsg-inventory']:AddItem(src, item, amount, nil, nil, 'rsg-medic-supplies')
+        local info = (item == Config.Revive.item and (Config.Revive.uses or 0) > 0) and { uses = Config.Revive.uses } or nil
+        exports['rsg-inventory']:AddItem(src, item, amount, info, nil, 'rsg-medic-supplies')
         TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[item], 'add', amount)
         Notify(src, 'bought', 'success', amount, ItemLabel(item), total)
     end
@@ -299,7 +327,7 @@ RegisterNetEvent('rsg-medic:server:finishAction', function()
 
     if p.kind == 'revive' then
         if not IsDead(Patient) then return end
-        if not HasItem(src, Config.Revive.item) then return Notify(src, 'need_item', 'error', ItemLabel(Config.Revive.item)) end
+        if not HasItem(src, Config.Revive.item) or not UseReviveItem(src) then return Notify(src, 'need_item', 'error', ItemLabel(Config.Revive.item)) end
         SetAlive(p.target, Patient)
         TriggerClientEvent('rsg-medic:client:revive', p.target)
         Notify(p.target, 'you_were_revived', 'success')
@@ -360,7 +388,10 @@ end)
 RSGCore.Commands.Add('revive', locale('cmd_revive_help'), { { name = 'id', help = locale('cmd_revive_arg') } }, false, function(source, args)
     local target = tonumber(args[1]) or source
     local Player = RSGCore.Functions.GetPlayer(target)
-    if not Player then return Notify(source, 'player_not_found', 'error') end
+    if not Player then
+        if source > 0 then Notify(source, 'player_not_found', 'error') else print('[rsg-medic] player not found') end
+        return
+    end
     SetAlive(target, Player)
     TriggerClientEvent('rsg-medic:client:revive', target)
     if source > 0 then Notify(source, 'admin_revived', 'success', target) end

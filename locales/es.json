@@ -50,5 +50,7 @@
     "am_wh_failed": "FALLIDO",
     "am_wh_yes": "Sí",
     "am_wh_no": "No",
-    "am_wh_seconds": "%ss"
+    "am_wh_seconds": "%ss",
+    "bag_uses": "Maletín médico: quedan %s/%s usos",
+    "bag_empty": "Tu maletín médico se ha agotado"
 }

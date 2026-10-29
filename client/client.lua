@@ -161,7 +161,7 @@ RegisterNetEvent('rsg-medic:client:revive', function(spawn)
     DoScreenFadeOut(500)
     while not IsScreenFadedOut() do Wait(10) end
 
-    local ped = cache.ped
+    local ped = PlayerPedId() -- live ped: cache.ped can be stale after a skin/model swap
     local c = spawn or GetEntityCoords(ped)
     local heading = spawn and spawn.w or GetEntityHeading(ped)
 

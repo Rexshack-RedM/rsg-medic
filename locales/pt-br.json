@@ -50,5 +50,7 @@
     "am_wh_failed": "FALHOU",
     "am_wh_yes": "Sim",
     "am_wh_no": "Não",
-    "am_wh_seconds": "%ss"
+    "am_wh_seconds": "%ss",
+    "bag_uses": "Maleta médica: restam %s/%s usos",
+    "bag_empty": "Sua maleta médica acabou"
 }

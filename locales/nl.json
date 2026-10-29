@@ -50,5 +50,7 @@
     "am_wh_failed": "MISLUKT",
     "am_wh_yes": "Ja",
     "am_wh_no": "Nee",
-    "am_wh_seconds": "%ss"
+    "am_wh_seconds": "%ss",
+    "bag_uses": "Dokterstas: nog %s/%s keer bruikbaar",
+    "bag_empty": "Je dokterstas is opgebruikt"
 }

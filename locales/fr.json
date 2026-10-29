@@ -50,5 +50,7 @@
     "am_wh_failed": "ÉCHEC",
     "am_wh_yes": "Oui",
     "am_wh_no": "Non",
-    "am_wh_seconds": "%ss"
+    "am_wh_seconds": "%ss",
+    "bag_uses": "Sacoche médicale : %s/%s utilisations restantes",
+    "bag_empty": "Ta sacoche médicale est épuisée"
 }

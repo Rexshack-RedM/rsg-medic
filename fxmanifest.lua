@@ -4,7 +4,7 @@ game 'rdr3'
 
 name 'rsg-medic'
 description 'Death system and medic job for RSG Framework'
-version '3.0.2'
+version '3.0.3'
 
 shared_scripts {
     '@ox_lib/init.lua',

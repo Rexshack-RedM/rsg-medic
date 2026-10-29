@@ -50,5 +50,7 @@
     "am_wh_failed": "NIEUDANE",
     "am_wh_yes": "Tak",
     "am_wh_no": "Nie",
-    "am_wh_seconds": "%ss"
+    "am_wh_seconds": "%ss",
+    "bag_uses": "Torba medyczna: pozostało %s/%s użyć",
+    "bag_empty": "Twoja torba medyczna została zużyta"
 }

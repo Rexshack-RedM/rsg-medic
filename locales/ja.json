@@ -50,5 +50,7 @@
     "am_wh_failed": "失敗",
     "am_wh_yes": "はい",
     "am_wh_no": "いいえ",
-    "am_wh_seconds": "%s秒"
+    "am_wh_seconds": "%s秒",
+    "bag_uses": "医療カバン：残り %s/%s 回",
+    "bag_empty": "医療カバンを使い切りました"
 }

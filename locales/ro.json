@@ -50,5 +50,7 @@
     "am_wh_failed": "EȘUAT",
     "am_wh_yes": "Da",
     "am_wh_no": "Nu",
-    "am_wh_seconds": "%ss"
+    "am_wh_seconds": "%ss",
+    "bag_uses": "Trusa medicală: %s/%s utilizări rămase",
+    "bag_empty": "Trusa ta medicală s-a consumat"
 }

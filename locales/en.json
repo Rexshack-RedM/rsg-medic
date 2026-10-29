@@ -141,5 +141,7 @@
     "am_wh_failed": "FAILED",
     "am_wh_yes": "Yes",
     "am_wh_no": "No",
-    "am_wh_seconds": "%ss"
+    "am_wh_seconds": "%ss",
+    "bag_uses": "Medical bag: %s/%s uses left",
+    "bag_empty": "Your medical bag is used up"
 }

@@ -50,5 +50,7 @@
     "am_wh_failed": "FEHLGESCHLAGEN",
     "am_wh_yes": "Ja",
     "am_wh_no": "Nein",
-    "am_wh_seconds": "%ss"
+    "am_wh_seconds": "%ss",
+    "bag_uses": "Arzttasche: noch %s/%s Anwendungen",
+    "bag_empty": "Deine Arzttasche ist aufgebraucht"
 }
