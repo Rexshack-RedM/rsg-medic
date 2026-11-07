@@ -4,10 +4,10 @@ game 'rdr3'
 
 name 'rsg-medic'
 description 'Death system and medic job for RSG Framework'
-version '3.0.3'
+version '3.0.4'
 
 shared_scripts {
-    '@ox_lib/init.lua',
+    '@rsg-core/shared/locale.lua',
     'shared/config.lua',
 }
 
@@ -36,7 +36,6 @@ files {
 dependencies {
     'rsg-core',
     'rsg-inventory',
-    'ox_lib',
 }
 
 lua54 'yes'

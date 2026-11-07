@@ -1,5 +1,7 @@
 # rsg-medic
 
+**Version 3.0.4** · Full reference: [DOCS.md](DOCS.md)
+
 Death system and doctor job for the RSG Framework (RedM), with a custom NUI in the RDR2 leather & gold theme.
 
 ## Features
@@ -28,22 +30,23 @@ Death system and doctor job for the RSG Framework (RedM), with a custom NUI in t
 
 **Security**
 - All revives, heals, respawns, purchases and stash access are checked on the server (job, duty, distance, items, money, inventory space)
-- Revive/treat use a server-timed session, so skipping the progress bar doesn't work
+- Revive, treat and bandage use server-timed sessions, so skipping the progress bar doesn't work
+- The server checks the player's ped is really dead before accepting a death, so clients can't fake a death for a free heal or teleport
+- Auto medic cooldown is tied to the character, so relogging doesn't reset it
 - Respawn timer is tracked server-side
 
 ## Dependencies
 
 - [rsg-core](https://github.com/Rexshack-RedM/rsg-core)
 - [rsg-inventory](https://github.com/Rexshack-RedM/rsg-inventory)
-- [ox_lib](https://github.com/overextended/ox_lib)
 - Optional: `rsg-bossmenu` for the management button
 
 ## Installation
 
 1. Put `rsg-medic` in your resources folder. The auto medic is built in, so remove `rex-automedic` if you have it. If you use another death/medic script, remove it — only one should handle death.
-2. Add the items from `installation/shared_items.lua` to `rsg-core/shared/items.lua` (skip any that exist), and add `bandage.png` / `medicalbag.png` to `rsg-inventory/html/images/`.
-3. Make sure a `medic` job exists in `rsg-core/shared/jobs.lua` (or change `Config.MedicJobs`).
-4. Add `ensure rsg-medic` to `server.cfg` after `rsg-core`, `rsg-inventory` and `ox_lib`.
+2. Add the items from `installation/shared_items.lua` to `rsg-core/shared/items.lua` (skip any that exist), and add `bandage.png` / `tool_medicalbag.png` (from `installation/images/`) to `rsg-inventory/html/images/`.
+3. Make sure a `medic` job exists in the rsg-core job database (multi-job admin), or change `Config.MedicJobs`.
+4. Add `ensure rsg-medic` to `server.cfg` after `rsg-core` and `rsg-inventory`. ox_lib is no longer needed.
 5. Check the coordinates in `Config.Locations` on your map and adjust as needed.
 
 ## Configuration
@@ -70,6 +73,8 @@ Everything is in `shared/config.lua`:
 
 ## Locales
 
-All text, including the NUI, is in `locales/en.json` (UI strings use the `ui_` prefix). To add a language, copy it to `locales/<code>.json`, translate the values, and set `setr ox:locale <code>`.
+All text, including the NUI, is in `locales/en.json` (UI strings use the `ui_` prefix). To add a language, copy it to `locales/<code>.json`, translate the values, and set `setr rsg:locale <code>`.
 
-Auto medic strings use the `am_` prefix and ship in de, el, es, fr, ja, nl, pl, pt-br and ro; other text in those languages falls back to English.
+Ships fully translated in en, de, el, es, fr, ja, nl, pl, pt-br and ro (every file has the same keys). Missing keys fall back to English.
+
+Support: https://buymeacoffee.com/rexshack

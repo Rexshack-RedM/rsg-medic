@@ -15,7 +15,7 @@ local function debug(msg)
 end
 
 local function notify(desc, ntype)
-    lib.notify({ title = locale('am_sv_title'), description = desc, type = ntype or 'info', duration = 5000 })
+    RSGCore.Functions.Notify({ title = locale('am_sv_title'), description = desc, type = ntype or 'inform', duration = 5000 })
 end
 
 local function loadModel(model)
@@ -112,7 +112,7 @@ local function rideAway()
         end
     end
 
-    local pCoords = GetEntityCoords(cache.ped)
+    local pCoords = GetEntityCoords(PlayerPedId())
     local dCoords = GetEntityCoords(doctor)
     local dir = dCoords - pCoords
     if #dir < 0.1 then dir = vector3(1.0, 0.0, 0.0) end
@@ -123,7 +123,7 @@ local function rideAway()
 
     local timeout = GetGameTimer() + Config.AutoMedic.LeaveTimeout * 1000
     while DoesEntityExist(doctor) do
-        if #(GetEntityCoords(doctor) - GetEntityCoords(cache.ped)) > Config.AutoMedic.DespawnDistance then break end
+        if #(GetEntityCoords(doctor) - GetEntityCoords(PlayerPedId())) > Config.AutoMedic.DespawnDistance then break end
         if GetGameTimer() > timeout then break end
         Wait(1000)
     end
@@ -145,7 +145,7 @@ RegisterNetEvent('rsg-medic:automedic:client:callDoctor', function()
     active = true
     status('dispatched')
 
-    local playerPed = cache.ped
+    local playerPed = PlayerPedId() -- body ped; isPlayerDead() cancels the flow on revive/respawn
     local pCoords = GetEntityCoords(playerPed)
     local spawn = getSpawnPoint(pCoords)
     local doctorHash = loadModel(Config.AutoMedic.DoctorModel)
@@ -181,10 +181,10 @@ RegisterNetEvent('rsg-medic:automedic:client:callDoctor', function()
     if Config.AutoMedic.ShowBlip then
         blip = Citizen.InvokeNative(0x23F74C2FDA6E7C61, 1664425300, doctor) -- BlipAddForEntity
         SetBlipSprite(blip, Config.AutoMedic.BlipSprite, true)
-        SetBlipName(blip, locale('am_cl_blip_name'))
+        Citizen.InvokeNative(0x9CB1A1623062F402, blip, locale('am_cl_blip_name')) -- SetBlipName
     end
 
-    notify(locale('am_cl_on_way'), 'info')
+    notify(locale('am_cl_on_way'), 'inform')
     report('spawned')
     debug(('doctor spawned at %.1f %.1f %.1f'):format(spawn.x, spawn.y, spawn.z))
 
@@ -195,7 +195,7 @@ RegisterNetEvent('rsg-medic:automedic:client:callDoctor', function()
     local lastTask = 0
     local startDist = math.max(1.0, #(GetEntityCoords(doctor) - pCoords) - Config.AutoMedic.DismountDistance)
     while stillNeeded() do
-        if not isPlayerDead() then notify(locale('am_cl_cancelled'), 'info') status('cancelled') report('cancelled') rideAway() return end
+        if not isPlayerDead() then notify(locale('am_cl_cancelled'), 'inform') status('cancelled') report('cancelled') rideAway() return end
 
         pCoords = GetEntityCoords(playerPed)
         local dist = #(GetEntityCoords(doctor) - pCoords)
@@ -233,7 +233,7 @@ RegisterNetEvent('rsg-medic:automedic:client:callDoctor', function()
     if IsPedOnMount(doctor) then
         Citizen.InvokeNative(0x5337B721C51883A9, doctor, false, false) -- RemovePedFromMount
     end
-    notify(locale('am_cl_arrived'), 'info')
+    notify(locale('am_cl_arrived'), 'inform')
     report('arrived')
 
     ---------------------------------
@@ -243,7 +243,7 @@ RegisterNetEvent('rsg-medic:automedic:client:callDoctor', function()
     TaskGoToEntity(doctor, playerPed, -1, Config.AutoMedic.ReviveDistance, 1.0, 0, 0)
     timeout = GetGameTimer() + 20000
     while stillNeeded() do
-        if not isPlayerDead() then notify(locale('am_cl_cancelled'), 'info') status('cancelled') report('cancelled') rideAway() return end
+        if not isPlayerDead() then notify(locale('am_cl_cancelled'), 'inform') status('cancelled') report('cancelled') rideAway() return end
         if #(GetEntityCoords(doctor) - GetEntityCoords(playerPed)) <= Config.AutoMedic.ReviveDistance + 0.5 then break end
         if GetGameTimer() > timeout then
             local pc = GetOffsetFromEntityInWorldCoords(playerPed, 0.0, Config.AutoMedic.ReviveDistance, 0.0)
@@ -261,13 +261,13 @@ RegisterNetEvent('rsg-medic:automedic:client:callDoctor', function()
     TaskTurnPedToFaceEntity(doctor, playerPed, 1500)
     Wait(1500)
     TaskStartScenarioInPlace(doctor, joaat('WORLD_HUMAN_CROUCH_INSPECT'), -1, true, false, false, false)
-    notify(locale('am_cl_treating'), 'info')
+    notify(locale('am_cl_treating'), 'inform')
 
     local finish = GetGameTimer() + Config.AutoMedic.ReviveTime
     while GetGameTimer() < finish do
         status('treating', { progress = 1 - (finish - GetGameTimer()) / Config.AutoMedic.ReviveTime })
         if not stillNeeded() then cleanup() return end
-        if not isPlayerDead() then notify(locale('am_cl_cancelled'), 'info') status('cancelled') report('cancelled') rideAway() return end
+        if not isPlayerDead() then notify(locale('am_cl_cancelled'), 'inform') status('cancelled') report('cancelled') rideAway() return end
         Wait(250)
     end
 

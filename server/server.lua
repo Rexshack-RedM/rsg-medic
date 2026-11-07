@@ -1,10 +1,9 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-lib.locale()
 
 local deathTimes   = {} -- [src] = os.time() when the player went down
 local alertTimes   = {} -- [src] = os.time() of last medic alert
 local pending      = {} -- [medicSrc] = { target, kind, start, duration }  in-progress revive/treat
-local actionCD     = {} -- [src] = GetGameTimer() of last bandage use
+local bandaging    = {} -- [src] = GetGameTimer() when a bandage use started (server-timed)
 
 local isMedicJob = {}
 for _, name in ipairs(Config.MedicJobs) do isMedicJob[name] = true end
@@ -13,7 +12,7 @@ for _, name in ipairs(Config.MedicJobs) do isMedicJob[name] = true end
 -- helpers
 ---------------------------------
 local function Notify(src, key, nType, ...)
-    TriggerClientEvent('ox_lib:notify', src, {
+    TriggerClientEvent('RSGCore:Client:Notify', src, {
         title = locale('title'), description = locale(key, ...), type = nType, duration = 5000,
     })
 end
@@ -56,6 +55,11 @@ local function HasItem(src, item)
     return exports['rsg-inventory']:HasItem(src, item, 1)
 end
 
+local function PedIsDead(src)
+    local ped = GetPlayerPed(src)
+    return ped and ped ~= 0 and GetEntityHealth(ped) <= 0
+end
+
 local function GetOnDutyMedics()
     local list = {}
     for src, Player in pairs(RSGCore.Functions.GetRSGPlayers()) do
@@ -63,6 +67,9 @@ local function GetOnDutyMedics()
     end
     return list
 end
+
+-- shared with server/automedic.lua (loaded after this file)
+RSGMedic = { IsDead = IsDead, Notify = Notify, GetOnDutyMedics = GetOnDutyMedics }
 
 local function NearestLocation(src)
     local coords = PedCoords(src)
@@ -133,18 +140,20 @@ RegisterNetEvent('rsg-medic:server:setDead', function()
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     if not Player or IsDead(Player) then return end
+    if not PedIsDead(src) then return end -- client can't flag itself dead to get a free heal / teleport
     Player.Functions.SetMetaData('isdead', true)
     deathTimes[src] = os.time()
 end)
 
-lib.callback.register('rsg-medic:server:getDeathInfo', function(src)
+RSGCore.Functions.CreateCallback('rsg-medic:server:getDeathInfo', function(src, cb)
     local Player = RSGCore.Functions.GetPlayer(src)
+    if not Player then return cb(nil) end
     if IsDead(Player) and not deathTimes[src] then deathTimes[src] = os.time() end -- reconnect / restart
     local remaining = 0
     if deathTimes[src] then
         remaining = math.max(0, Config.DeathTimer - (os.time() - deathTimes[src]))
     end
-    return { remaining = remaining, medics = #GetOnDutyMedics() }
+    cb({ remaining = remaining, medics = #GetOnDutyMedics() })
 end)
 
 RegisterNetEvent('rsg-medic:server:respawn', function()
@@ -200,10 +209,10 @@ end)
 ---------------------------------
 -- doctor's office
 ---------------------------------
-lib.callback.register('rsg-medic:server:getMenu', function(src, locId)
+RSGCore.Functions.CreateCallback('rsg-medic:server:getMenu', function(src, cb, locId)
     local Player = RSGCore.Functions.GetPlayer(src)
     local loc = GetLocation(locId)
-    if not IsMedic(Player) or not NearLocation(src, loc) then return nil end
+    if not IsMedic(Player) or not NearLocation(src, loc) then return cb(nil) end
 
     local items = {}
     for _, s in ipairs(Config.Supplies) do
@@ -211,12 +220,12 @@ lib.callback.register('rsg-medic:server:getMenu', function(src, locId)
     end
 
     local job = Player.PlayerData.job
-    return {
+    cb({
         location = loc.label,
         onduty   = job.onduty,
         isBoss   = job.isboss == true and Config.BossMenuEvent ~= nil,
         items    = items,
-    }
+    })
 end)
 
 RegisterNetEvent('rsg-medic:server:toggleDuty', function()
@@ -270,9 +279,9 @@ end)
 ---------------------------------
 -- field medicine
 ---------------------------------
-lib.callback.register('rsg-medic:server:getPatients', function(src)
+RSGCore.Functions.CreateCallback('rsg-medic:server:getPatients', function(src, cb)
     local Medic = RSGCore.Functions.GetPlayer(src)
-    if not IsMedic(Medic, true) then return nil end
+    if not IsMedic(Medic, true) then return cb(nil) end
 
     local list = {}
     for id, Player in pairs(RSGCore.Functions.GetRSGPlayers()) do
@@ -284,28 +293,30 @@ lib.callback.register('rsg-medic:server:getPatients', function(src)
         end
     end
     table.sort(list, function(a, b) return a.dist < b.dist end)
-    return list
+    cb(list)
 end)
 
 -- step 1: validate and open a timed action
-lib.callback.register('rsg-medic:server:beginAction', function(src, kind, target)
+RSGCore.Functions.CreateCallback('rsg-medic:server:beginAction', function(src, cb, kind, target)
+    local function fail(key, ...) if key then Notify(src, key, 'error', ...) end cb(false) end
     local Medic = RSGCore.Functions.GetPlayer(src)
-    if kind ~= 'revive' and kind ~= 'treat' then return false end
-    if not IsMedic(Medic, true) then Notify(src, 'not_on_duty', 'error') return false end
-    if pending[src] then Notify(src, 'busy', 'error') return false end
+    if kind ~= 'revive' and kind ~= 'treat' then return fail() end
+    if not IsMedic(Medic, true) then return fail('not_on_duty') end
+    if IsDead(Medic) then return fail() end
+    if pending[src] then return fail('busy') end
 
     target = tonumber(target)
     local Patient = target and RSGCore.Functions.GetPlayer(target)
-    if not Patient or target == src then Notify(src, 'no_patient', 'error') return false end
-    if Distance(src, target) > Config.ActionDistance then Notify(src, 'patient_too_far', 'error') return false end
+    if not Patient or target == src then return fail('no_patient') end
+    if Distance(src, target) > Config.ActionDistance then return fail('patient_too_far') end
 
     local cfg = kind == 'revive' and Config.Revive or Config.Treat
-    if kind == 'revive' and not IsDead(Patient) then Notify(src, 'patient_not_dead', 'error') return false end
-    if kind == 'treat' and IsDead(Patient) then Notify(src, 'patient_dead', 'error') return false end
-    if not HasItem(src, cfg.item) then Notify(src, 'need_item', 'error', ItemLabel(cfg.item)) return false end
+    if kind == 'revive' and not IsDead(Patient) then return fail('patient_not_dead') end
+    if kind == 'treat' and IsDead(Patient) then return fail('patient_dead') end
+    if not HasItem(src, cfg.item) then return fail('need_item', ItemLabel(cfg.item)) end
 
     pending[src] = { target = target, kind = kind, start = GetGameTimer(), duration = cfg.duration }
-    return cfg.duration
+    cb(cfg.duration)
 end)
 
 RegisterNetEvent('rsg-medic:server:cancelAction', function()
@@ -327,7 +338,7 @@ RegisterNetEvent('rsg-medic:server:finishAction', function()
 
     if p.kind == 'revive' then
         if not IsDead(Patient) then return end
-        if not HasItem(src, Config.Revive.item) or not UseReviveItem(src) then return Notify(src, 'need_item', 'error', ItemLabel(Config.Revive.item)) end
+        if not UseReviveItem(src) then return Notify(src, 'need_item', 'error', ItemLabel(Config.Revive.item)) end
         SetAlive(p.target, Patient)
         TriggerClientEvent('rsg-medic:client:revive', p.target)
         Notify(p.target, 'you_were_revived', 'success')
@@ -356,17 +367,22 @@ RSGCore.Functions.CreateUseableItem(Config.Bandage.item, function(source)
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
     if not Player or IsDead(Player) then return end
+    if bandaging[src] and GetGameTimer() - bandaging[src] < Config.Bandage.duration + 10000 then return end
+    bandaging[src] = GetGameTimer()
     TriggerClientEvent('rsg-medic:client:useBandage', src)
+end)
+
+RegisterNetEvent('rsg-medic:server:bandageCancel', function()
+    bandaging[source] = nil
 end)
 
 RegisterNetEvent('rsg-medic:server:bandageDone', function()
     local src = source
     local Player = RSGCore.Functions.GetPlayer(src)
-    if not Player or IsDead(Player) then return end
-
-    local now = GetGameTimer()
-    if actionCD[src] and now - actionCD[src] < Config.Bandage.duration then return end
-    actionCD[src] = now
+    local started = bandaging[src]
+    bandaging[src] = nil
+    if not Player or IsDead(Player) or not started then return end
+    if GetGameTimer() - started < Config.Bandage.duration - 500 then return end -- progress bar skipped
 
     if not exports['rsg-inventory']:RemoveItem(src, Config.Bandage.item, 1, nil, 'rsg-medic-bandage') then return end
     TriggerClientEvent('rsg-inventory:client:ItemBox', src, RSGCore.Shared.Items[Config.Bandage.item], 'remove', 1)
@@ -402,5 +418,5 @@ end, 'admin')
 ---------------------------------
 AddEventHandler('playerDropped', function()
     local src = source
-    deathTimes[src], alertTimes[src], pending[src], actionCD[src] = nil, nil, nil, nil
+    deathTimes[src], alertTimes[src], pending[src], bandaging[src] = nil, nil, nil, nil
 end)

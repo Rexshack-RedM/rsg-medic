@@ -88,8 +88,6 @@
     "ui_revive": "Revive",
     "ui_treat": "Treat",
     "ui_unconscious": "Unconscious",
-    "ui_health": "Health",
-    "ui_close": "Close",
     "am_cl_not_dead": "You can only call the doctor when you are incapacitated.",
     "am_cl_already_active": "A doctor is already on the way.",
     "am_cl_on_way": "A doctor has been called and is riding to your location.",

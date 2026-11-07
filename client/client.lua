@@ -1,14 +1,17 @@
 local RSGCore = exports['rsg-core']:GetCoreObject()
-lib.locale()
 
 local isDead     = false
 local isBusy     = false
 local nuiOpen    = false
 local alertUntil = 0
 local PlayerJob  = {}
-local blips      = {}
+local blips      = {} -- office blips
+local alertBlips = {} -- [blip] = true, patient alerts
 local promptGroup = GetRandomIntInRange(0, 0xffffff)
 local menuPrompt
+local deathCam
+local opening = false
+local uiEditing = false
 
 local isMedicJob = {}
 for _, name in ipairs(Config.MedicJobs) do isMedicJob[name] = true end
@@ -17,7 +20,7 @@ for _, name in ipairs(Config.MedicJobs) do isMedicJob[name] = true end
 -- helpers
 ---------------------------------
 local function Notify(key, nType, ...)
-    lib.notify({ title = locale('title'), description = locale(key, ...), type = nType, duration = 5000 })
+    RSGCore.Functions.Notify({ title = locale('title'), description = locale(key, ...), type = nType, duration = 5000 })
 end
 
 local function IsMedic(needDuty)
@@ -45,20 +48,22 @@ end
 -- death screen
 ---------------------------------
 local function DeathScreen()
-    local info = lib.callback.await('rsg-medic:server:getDeathInfo', false)
+    local info = RSGCore.Functions.AwaitCallback('rsg-medic:server:getDeathInfo') or { remaining = Config.DeathTimer, medics = 0 }
     local deadline = GetGameTimer() + info.remaining * 1000
     local medics = info.medics
     local lastSync, lastPush = GetGameTimer(), 0
 
     SendNUIMessage({ action = 'death', show = true, fee = Config.RespawnFee })
 
+    local am = Config.AutoMedic
     while isDead do
         local now = GetGameTimer()
+        local useAutoMedic = am.Enabled and medics <= 0 and (am.MaxMedicsOnDuty < 0 or medics <= am.MaxMedicsOnDuty)
 
         if now - lastSync > 15000 then -- resync timer + medic count with the server
             lastSync = now
             CreateThread(function()
-                local i = lib.callback.await('rsg-medic:server:getDeathInfo', false)
+                local i = RSGCore.Functions.AwaitCallback('rsg-medic:server:getDeathInfo')
                 if i then deadline, medics = GetGameTimer() + i.remaining * 1000, i.medics end
             end)
         end
@@ -66,11 +71,10 @@ local function DeathScreen()
         local remaining = math.max(0, math.ceil((deadline - now) / 1000))
         local alertWait = math.max(0, math.ceil((alertUntil - now) / 1000))
 
-        local useAutoMedic = Config.AutoMedic and Config.AutoMedic.Enabled and medics <= 0
 
         if now - lastPush >= 1000 then
             lastPush = now
-            SendNUIMessage({ action = 'deathUpdate', remaining = remaining, total = Config.DeathTimer, medics = medics, alertWait = alertWait, autoMedic = useAutoMedic, autoMedicCost = useAutoMedic and Config.AutoMedic.Cost or 0 })
+            SendNUIMessage({ action = 'deathUpdate', remaining = remaining, total = Config.DeathTimer, medics = medics, alertWait = alertWait, autoMedic = useAutoMedic, autoMedicCost = useAutoMedic and am.Cost or 0 })
         end
 
         if remaining == 0 and (IsControlJustReleased(0, Config.Keys.respawn) or IsDisabledControlJustReleased(0, Config.Keys.respawn)) then
@@ -78,7 +82,7 @@ local function DeathScreen()
             Wait(2000)
         elseif alertWait == 0 and (IsControlJustReleased(0, Config.Keys.alert) or IsDisabledControlJustReleased(0, Config.Keys.alert)) then
             if useAutoMedic then
-                ExecuteCommand(Config.AutoMedic.Command) -- no doctors on duty: send the NPC doctor
+                ExecuteCommand(am.Command) -- no doctors on duty: send the NPC doctor
                 alertUntil = now + 5000
             else
                 TriggerServerEvent('rsg-medic:server:alert')
@@ -97,9 +101,10 @@ end
 ---------------------------------
 local function DeathCam()
     local cfg = Config.DeathCam
-    local heading = GetGameplayCamRelativeHeading() + GetEntityHeading(cache.ped)
+    local heading = GetGameplayCamRelativeHeading() + GetEntityHeading(PlayerPedId())
     local pitch, dist = -20.0, cfg.Distance
     local cam = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+    deathCam = cam
     SetCamFov(cam, 60.0)
     RenderScriptCams(true, true, 500, true, true)
 
@@ -109,13 +114,14 @@ local function DeathCam()
         if IsDisabledControlJustPressed(0, 0x62800C92) then dist = math.max(cfg.MinDistance, dist - 0.5) end -- scroll up
         if IsDisabledControlJustPressed(0, 0x8BDE7443) then dist = math.min(cfg.MaxDistance, dist + 0.5) end -- scroll down
 
-        local target = GetEntityCoords(cache.ped) + vector3(0.0, 0.0, 0.3)
+        local ped = PlayerPedId()
+        local target = GetEntityCoords(ped) + vector3(0.0, 0.0, 0.3)
         local h, p = math.rad(heading), math.rad(pitch)
         local offset = vector3(math.sin(h) * math.cos(p) * dist, -math.cos(h) * math.cos(p) * dist, -math.sin(p) * dist) -- behind and above the body
         local pos = target + offset
 
         -- stop the camera clipping through walls/terrain
-        local ray = StartShapeTestRay(target.x, target.y, target.z, pos.x, pos.y, pos.z, -1, cache.ped, 0)
+        local ray = StartShapeTestRay(target.x, target.y, target.z, pos.x, pos.y, pos.z, -1, ped, 0)
         local _, hit, hitPos = GetShapeTestResult(ray)
         if hit == 1 then pos = target + (hitPos - target) * 0.9 end
 
@@ -126,12 +132,14 @@ local function DeathCam()
 
     RenderScriptCams(false, true, 500, true, true)
     DestroyCam(cam, false)
+    deathCam = nil
 end
 
 local function OnDeath()
     if isDead then return end
     isDead = true
     if nuiOpen then SetNui(false) SendNUIMessage({ action = 'closeAll' }) end
+    if uiEditing then uiEditing = false SetNuiFocus(false, false) SendNUIMessage({ action = 'editMode', enabled = false }) end
     LocalPlayer.state:set('inv_busy', true, true)
     TriggerServerEvent('rsg-medic:server:setDead')
     CreateThread(DeathScreen)
@@ -141,7 +149,7 @@ end
 CreateThread(function()
     while true do
         if not isDead and LocalPlayer.state.isLoggedIn and not LocalPlayer.state.isLoadingSkin then
-            -- use the live ped: a model swap (/loadskin) leaves cache.ped pointing at the old, deleted ped
+            -- always use the live ped: a model swap (/loadskin) replaces the player ped
             local ped = PlayerPedId()
             if DoesEntityExist(ped) and IsEntityDead(ped) then
                 Wait(500) -- confirm, so a brief ped swap can't trigger the death screen
@@ -161,7 +169,7 @@ RegisterNetEvent('rsg-medic:client:revive', function(spawn)
     DoScreenFadeOut(500)
     while not IsScreenFadedOut() do Wait(10) end
 
-    local ped = PlayerPedId() -- live ped: cache.ped can be stale after a skin/model swap
+    local ped = PlayerPedId()
     local c = spawn or GetEntityCoords(ped)
     local heading = spawn and spawn.w or GetEntityHeading(ped)
 
@@ -182,7 +190,7 @@ end)
 
 RegisterNetEvent('rsg-medic:client:heal', function(amount)
     if isDead then return end
-    local ped = cache.ped
+    local ped = PlayerPedId()
     if amount == -1 then return FullHeal(ped) end
     SetEntityHealth(ped, math.min(GetEntityMaxHealth(ped), GetEntityHealth(ped) + amount))
 end)
@@ -193,7 +201,7 @@ local function CheckLoadedState()
     PlayerJob = pd.job or {}
     if pd.metadata and pd.metadata.isdead then
         Wait(1000)
-        SetEntityHealth(cache.ped, 0)
+        SetEntityHealth(PlayerPedId(), 0)
     end
 end
 
@@ -211,8 +219,9 @@ RegisterNetEvent('rsg-medic:client:alert', function(coords)
     local blip = BlipAddForCoords(1664425300, coords.x, coords.y, coords.z)
     SetBlipSprite(blip, Config.AlertBlipSprite, true)
     SetBlipLabel(blip, locale('alert_blip'))
-    blips[#blips + 1] = blip
+    alertBlips[blip] = true
     SetTimeout(Config.AlertBlipTime * 1000, function()
+        alertBlips[blip] = nil
         if DoesBlipExist(blip) then RemoveBlip(blip) end
     end)
 end)
@@ -222,22 +231,23 @@ end)
 ---------------------------------
 local function DoAction(kind, target)
     if isBusy or isDead then return end
-    local duration = lib.callback.await('rsg-medic:server:beginAction', false, kind, target)
-    if not duration then return end
-
     isBusy = true
-    local targetPed = GetPlayerPed(GetPlayerFromServerId(target))
-    if targetPed ~= 0 then TaskTurnPedToFaceEntity(cache.ped, targetPed, 1000) Wait(1000) end
-    TaskStartScenarioInPlace(cache.ped, `WORLD_HUMAN_CROUCH_INSPECT`, -1, true, false, false, false)
+    local duration = RSGCore.Functions.AwaitCallback('rsg-medic:server:beginAction', nil, kind, target)
+    if not duration then isBusy = false return end
 
-    local ok = lib.progressBar({
+    local ped = PlayerPedId()
+    local targetPed = GetPlayerPed(GetPlayerFromServerId(target))
+    if targetPed ~= 0 then TaskTurnPedToFaceEntity(ped, targetPed, 1000) Wait(1000) end
+    TaskStartScenarioInPlace(ped, `WORLD_HUMAN_CROUCH_INSPECT`, -1, true, false, false, false)
+
+    local ok = RSGCore.Functions.ProgressBar({
         duration  = duration,
         label     = locale(kind == 'revive' and 'progress_revive' or 'progress_treat'),
         canCancel = true,
-        disable   = { move = true, car = true, combat = true },
+        disable   = { move = true, mount = true, combat = true },
     })
 
-    ClearPedTasks(cache.ped)
+    ClearPedTasks(ped)
     isBusy = false
     if ok then
         TriggerServerEvent('rsg-medic:server:finishAction')
@@ -248,19 +258,27 @@ local function DoAction(kind, target)
 end
 
 RegisterNetEvent('rsg-medic:client:useBandage', function()
-    if isBusy or isDead then return end
-    local ped = cache.ped
-    if GetEntityHealth(ped) >= GetEntityMaxHealth(ped) then return Notify('full_health', 'inform') end
+    if isBusy or isDead then return TriggerServerEvent('rsg-medic:server:bandageCancel') end
+    local ped = PlayerPedId()
+    if GetEntityHealth(ped) >= GetEntityMaxHealth(ped) then
+        TriggerServerEvent('rsg-medic:server:bandageCancel')
+        return Notify('full_health', 'inform')
+    end
 
     isBusy = true
-    local ok = lib.progressBar({
+    local ok = RSGCore.Functions.ProgressBar({
         duration  = Config.Bandage.duration,
         label     = locale('progress_bandage'),
         canCancel = true,
-        disable   = { car = true, combat = true },
+        disable   = { mount = true, combat = true },
     })
     isBusy = false
-    if ok then TriggerServerEvent('rsg-medic:server:bandageDone') else Notify('cancelled', 'inform') end
+    if ok then
+        TriggerServerEvent('rsg-medic:server:bandageDone')
+    else
+        TriggerServerEvent('rsg-medic:server:bandageCancel')
+        Notify('cancelled', 'inform')
+    end
 end)
 
 ---------------------------------
@@ -271,7 +289,7 @@ local function OpenFieldMenu(refresh)
     if not IsMedic() then return Notify('not_medic', 'error') end
     if not IsMedic(true) then return Notify('not_on_duty', 'error') end
 
-    local patients = lib.callback.await('rsg-medic:server:getPatients', false) or {}
+    local patients = RSGCore.Functions.AwaitCallback('rsg-medic:server:getPatients') or {}
     for _, p in ipairs(patients) do
         local ped = GetPlayerPed(GetPlayerFromServerId(p.id))
         if ped ~= 0 and not p.dead then
@@ -289,9 +307,8 @@ end
 ---------------------------------
 -- UI move mode
 ---------------------------------
-local uiEditing = false
 RegisterCommand(Config.UiCommand, function()
-    if nuiOpen then return end -- menus can already be dragged while open
+    if nuiOpen or isDead then return end -- menus can already be dragged while open
     uiEditing = not uiEditing
     SetNuiFocus(uiEditing, uiEditing)
     SendNUIMessage({ action = 'editMode', enabled = uiEditing })
@@ -312,8 +329,9 @@ TriggerEvent('chat:addSuggestion', '/' .. Config.FieldCommand, locale('cmd_medic
 local currentLoc
 
 local function OpenOfficeMenu(loc, refresh)
-    local data = lib.callback.await('rsg-medic:server:getMenu', false, loc.id)
+    local data = RSGCore.Functions.AwaitCallback('rsg-medic:server:getMenu', nil, loc.id)
     if not data then return Notify('not_medic', 'error') end
+    if isDead then return end
     currentLoc = loc
     data.maxAmount = Config.MaxBuyAmount
     if not refresh then SetNui(true) end
@@ -339,18 +357,30 @@ CreateThread(function()
         SetBlipScale(blip, 0.2)
         SetBlipLabel(blip, loc.label)
         blips[#blips + 1] = blip
+    end
 
-        lib.points.new({
-            coords = loc.point,
-            distance = 2.0,
-            nearby = function()
-                if nuiOpen or isDead or not IsMedic() then return end
-                PromptSetActiveGroupThisFrame(promptGroup, CreateVarString(10, 'LITERAL_STRING', loc.label))
-                if PromptHasHoldModeCompleted(menuPrompt) then
-                    CreateThread(function() OpenOfficeMenu(loc) end)
+    -- office prompt: sleeps unless a medic is standing at a doctor's office
+    while true do
+        local sleep = 1000
+        if not nuiOpen and not isDead and not opening and IsMedic() then
+            local coords = GetEntityCoords(PlayerPedId())
+            for _, loc in ipairs(Config.Locations) do
+                if #(coords - loc.point) <= 2.0 then
+                    sleep = 0
+                    PromptSetActiveGroupThisFrame(promptGroup, CreateVarString(10, 'LITERAL_STRING', loc.label))
+                    if PromptHasHoldModeCompleted(menuPrompt) then
+                        opening = true -- hold stays "completed" for a few frames; open once
+                        CreateThread(function()
+                            OpenOfficeMenu(loc)
+                            Wait(500)
+                            opening = false
+                        end)
+                    end
+                    break
                 end
-            end,
-        })
+            end
+        end
+        Wait(sleep)
     end
 end)
 
@@ -358,9 +388,11 @@ end)
 -- NUI callbacks
 ---------------------------------
 RegisterNUICallback('ready', function(_, cb)
+    -- send every ui_ key (en.json is the master list; locale() falls back to English per key)
     local strings = {}
-    for k, v in pairs(lib.getLocales()) do
-        if k:sub(1, 3) == 'ui_' then strings[k] = v end
+    local ok, en = pcall(json.decode, LoadResourceFile(GetCurrentResourceName(), 'locales/en.json') or '{}')
+    for k in pairs(ok and en or {}) do
+        if k:sub(1, 3) == 'ui_' then strings[k] = locale(k) end
     end
     cb(strings)
 end)
@@ -417,7 +449,9 @@ end)
 AddEventHandler('onResourceStop', function(res)
     if res ~= GetCurrentResourceName() then return end
     for _, b in ipairs(blips) do if DoesBlipExist(b) then RemoveBlip(b) end end
+    for b in pairs(alertBlips) do if DoesBlipExist(b) then RemoveBlip(b) end end
     if menuPrompt then PromptDelete(menuPrompt) end
-    if nuiOpen then SetNuiFocus(false, false) end
+    if deathCam then RenderScriptCams(false, false, 0, true, true) DestroyCam(deathCam, false) end
+    if nuiOpen or uiEditing then SetNuiFocus(false, false) end
     if isDead then LocalPlayer.state:set('inv_busy', false, true) end
 end)
