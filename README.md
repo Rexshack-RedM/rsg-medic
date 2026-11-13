@@ -77,4 +77,4 @@ All text, including the NUI, is in `locales/en.json` (UI strings use the `ui_` p
 
 Ships fully translated in en, de, el, es, fr, ja, nl, pl, pt-br and ro (every file has the same keys). Missing keys fall back to English.
 
-Support: https://buymeacoffee.com/rexshack
+Support the Project : https://rexshack.tebex.store/

@@ -90,4 +90,4 @@ TriggerEvent('rsg-medic:server:reviveInPlace', targetSrc)
 | Webhooks don't send | Replace `CHANGE_ME` URLs in `server/sv_config.lua` |
 | `/automedic` says medics online | Raise `MaxMedicsOnDuty` or set `-1` |
 
-Support: https://buymeacoffee.com/rexshack
+Support the Project : https://rexshack.tebex.store/
