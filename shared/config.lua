@@ -115,3 +115,9 @@ Config.AutoMedic = {
     ShowBlip         = true,
     BlipSprite       = `blip_mp_travelling_saleswoman`,
 }
+
+-- rsg-reputation integration (optional). Needs the rsg-reputation resource; does nothing when it is not started.
+Config.Reputation = {
+    Enabled = true,
+    Action = 'revive', -- action name in rsg-reputation's Config.Actions (honor only: no region is sent)
+}

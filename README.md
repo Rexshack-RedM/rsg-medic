@@ -1,6 +1,6 @@
 # rsg-medic
 
-**Version 3.0.4** · Full reference: [DOCS.md](DOCS.md)
+**Version 3.1.0** · Full reference: [DOCS.md](DOCS.md)
 
 Death system and doctor job for the RSG Framework (RedM), with a custom NUI in the RDR2 leather & gold theme.
 
@@ -76,5 +76,10 @@ Everything is in `shared/config.lua`:
 All text, including the NUI, is in `locales/en.json` (UI strings use the `ui_` prefix). To add a language, copy it to `locales/<code>.json`, translate the values, and set `setr rsg:locale <code>`.
 
 Ships fully translated in en, de, el, es, fr, ja, nl, pl, pt-br and ro (every file has the same keys). Missing keys fall back to English.
+
+## rsg-reputation integration
+
+Optional. With `rsg-reputation` started, the medic who revives a patient with the medical bag gets the `revive` action (honor). Admin revives and the auto medic give nothing. Set `Config.Reputation.Enabled = false` to turn it off.
+
 
 Support the Project : https://rexshack.tebex.store/

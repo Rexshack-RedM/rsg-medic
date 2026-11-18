@@ -1,6 +1,6 @@
 # rsg-medic — Developer & Server Owner Docs
 
-Version 3.0.4 · Dependencies: rsg-core, rsg-inventory (optional rsg-bossmenu)
+Version 3.1.0 · Dependencies: rsg-core, rsg-inventory (optional rsg-bossmenu)
 
 ## Contents
 1. Files
@@ -89,5 +89,10 @@ TriggerEvent('rsg-medic:server:reviveInPlace', targetSrc)
 | Death screen never appears | Another death script is running; only one should handle death |
 | Webhooks don't send | Replace `CHANGE_ME` URLs in `server/sv_config.lua` |
 | `/automedic` says medics online | Raise `MaxMedicsOnDuty` or set `-1` |
+
+## rsg-reputation integration
+
+`Config.Reputation = { Enabled, Action }`. After a server-validated revive in the finish handler (patient dead, item used, distance checked), the server calls `ApplyAction(src, 'revive')` for the medic. No region is passed, so only honor changes. Skipped when rsg-reputation is not started.
+
 
 Support the Project : https://rexshack.tebex.store/

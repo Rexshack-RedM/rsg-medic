@@ -344,6 +344,9 @@ RegisterNetEvent('rsg-medic:server:finishAction', function()
         Notify(p.target, 'you_were_revived', 'success')
         Notify(src, 'revived_patient', 'success', CharName(Patient))
         Pay(src, Medic, Config.Revive.reward)
+        if Config.Reputation.Enabled and GetResourceState('rsg-reputation') == 'started' then
+            exports['rsg-reputation']:ApplyAction(src, Config.Reputation.Action) -- rsg-reputation (optional)
+        end
     else
         if IsDead(Patient) then return end
         local item = Config.Treat.item
