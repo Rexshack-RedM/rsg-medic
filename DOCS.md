@@ -96,3 +96,143 @@ TriggerEvent('rsg-medic:server:reviveInPlace', targetSrc)
 
 
 Support the Project : https://rexshack.tebex.store/
+
+<!-- BEGIN AUTO-REFERENCE (generated from the code; re-run the generator instead of editing by hand) -->
+
+## Technical reference
+
+Generated from the source of **rsg-medic 3.1.0**. Names, arguments and defaults below are read straight from the code.
+
+### Dependencies
+
+`rsg-core`, `rsg-inventory`
+
+### Configuration
+
+| Option | Default | Notes |
+|---|---|---|
+| `Config.MedicJobs` | `{ 'medic' }` | job names treated as medics |
+| `Config.RequireDuty` | `true` | medics must be on duty to use field actions / supplies |
+| `Config.DeathTimer` | `300` | seconds before a downed player may respawn at the doctor |
+| `Config.RespawnFee` | `25` | charged on hospital respawn (cash, then bank); 0 = free |
+| `Config.AlertCooldown` | `60` | seconds between "call for a medic" alerts |
+| `Config.AlertBlipTime` | `120` | seconds an alert blip stays on medics' maps |
+| `Config.DeathCam` | `table` | keys (RedM control hashes) |
+| `Config.Enabled` | `true` |  |
+| `Config.Distance` | `3.5` |  |
+| `Config.MinDistance` | `1.5` |  |
+| `Config.MaxDistance` | `8.0` |  |
+| `Config.Sensitivity` | `6.0` |  |
+| `Config.Keys` | `table` |  |
+| `Config.ActionDistance` | `3.0` | metres between medic and patient |
+| `Config.FieldRange` | `10.0` | metres to list nearby patients in the field menu |
+| `Config.UiCommand` | `'medicui'` | toggles UI move mode (drag panels by their header, double-click to reset) |
+| `Config.FieldCommand` | `'medic'` | opens the field menu for on-duty medics |
+| `Config.Revive` | `table` |  |
+| `Config.Treat` | `table` |  |
+| `Config.Bandage` | `table` | self-use bandage item for anyone |
+| `Config.Supplies` | `table` |  |
+| `Config.MaxBuyAmount` | `50` |  |
+| `Config.Stash` | `{ slots = 50, maxweight = 400000 }` |  |
+| `Config.BossMenuEvent` | `'rsg-bossmenu:client:mainmenu'` | client event opened for boss grades; nil to hide |
+| `Config.BlipSprite` | ``blip_shop_doctor`` |  |
+| `Config.AlertBlipSprite` | ``blip_ambient_companion`` |  |
+| `Config.Locations` | `table` |  |
+| `Config.AutoMedic` | `table` |  |
+| `Config.Debug` | `false` |  |
+| `Config.Command` | `'automedic'` |  |
+| `Config.Cost` | `50` |  |
+| `Config.MoneyType` | `'cash'` |  |
+| `Config.Cooldown` | `300` |  |
+| `Config.MaxMedicsOnDuty` | `0` |  |
+| `Config.DoctorModel` | `'u_m_m_rhddoctor_01'` |  |
+| `Config.HorseModel` | `'a_c_horse_kentuckysaddle_black'` |  |
+| `Config.SpawnDistance` | `80.0` |  |
+| `Config.DismountDistance` | `8.0` |  |
+| `Config.ReviveDistance` | `1.5` |  |
+| `Config.DespawnDistance` | `120.0` |  |
+| `Config.RideSpeed` | `3.0` |  |
+| `Config.ReviveTime` | `8000` |  |
+| `Config.ArrivalTimeout` | `90` |  |
+| `Config.LeaveTimeout` | `45` |  |
+| `Config.ShowBlip` | `true` |  |
+| `Config.Reputation` | `table` | rsg-reputation integration (optional). Needs the rsg-reputation resource; does nothing when it is not started. |
+| `Config.Action` | `'revive'` |  |
+
+### Exports
+
+**Server**
+
+| Export | Arguments | File |
+|---|---|---|
+| `SendAutomedicLog` | `` | `server/automedic_webhooks.lua` |
+
+```lua
+-- example
+local result = exports['rsg-medic']:SendAutomedicLog()
+```
+
+### Callbacks
+
+| Callback | Side | Arguments | File |
+|---|---|---|---|
+| `rsg-medic:server:getDeathInfo` | server | `src, cb` | `server/server.lua` |
+| `rsg-medic:server:getMenu` | server | `src, cb, locId` | `server/server.lua` |
+| `rsg-medic:server:getPatients` | server | `src, cb` | `server/server.lua` |
+| `rsg-medic:server:beginAction` | server | `src, cb, kind, target` | `server/server.lua` |
+
+```lua
+-- client side
+RSGCore.Functions.TriggerCallback('rsg-medic:server:getDeathInfo', function(result)
+    -- use result
+end)
+```
+
+### Events
+
+Server events can be fired by any client, so every handler re-validates the player, the arguments and any permission, distance or cooldown on the server. Never add a reward to a handler without those checks.
+
+| Event | Side | Arguments | File |
+|---|---|---|---|
+| `rsg-medic:automedic:client:callDoctor` | client | `` | `client/automedic.lua` |
+| `rsg-medic:client:alertSent` | client | `cooldown` | `client/client.lua` |
+| `rsg-medic:client:revive` | client | `spawn` | `client/client.lua` |
+| `rsg-medic:client:heal` | client | `amount` | `client/client.lua` |
+| `RSGCore:Client:OnPlayerLoaded` | client | `` | `client/client.lua` |
+| `RSGCore:Client:OnJobUpdate` | client | `job` | `client/client.lua` |
+| `RSGCore:Client:SetDuty` | client | `duty` | `client/client.lua` |
+| `RSGCore:Client:OnPlayerUnload` | client | `` | `client/client.lua` |
+| `rsg-medic:client:alert` | client | `coords` | `client/client.lua` |
+| `rsg-medic:client:useBandage` | client | `` | `client/client.lua` |
+| `rsg-medic:automedic:server:treated` | server | `` | `server/automedic.lua` |
+| `rsg-medic:automedic:server:stage` | server | `stage` | `server/automedic.lua` |
+| `rsg-medic:automedic:server:finished` | server | `` | `server/automedic.lua` |
+| `rsg-medic:server:setDead` | server | `` | `server/server.lua` |
+| `rsg-medic:server:respawn` | server | `` | `server/server.lua` |
+| `rsg-medic:server:alert` | server | `` | `server/server.lua` |
+| `rsg-medic:server:toggleDuty` | server | `` | `server/server.lua` |
+| `rsg-medic:server:buy` | server | `item, amount` | `server/server.lua` |
+| `rsg-medic:server:openStash` | server | `` | `server/server.lua` |
+| `rsg-medic:server:cancelAction` | server | `` | `server/server.lua` |
+| `rsg-medic:server:finishAction` | server | `` | `server/server.lua` |
+| `rsg-medic:server:bandageCancel` | server | `` | `server/server.lua` |
+| `rsg-medic:server:bandageDone` | server | `` | `server/server.lua` |
+
+```lua
+-- from a client script
+TriggerServerEvent('rsg-medic:automedic:server:treated')
+-- from a server script
+TriggerClientEvent('rsg-medic:automedic:client:callDoctor', source)
+```
+
+### Commands
+
+| Command | Notes | File |
+|---|---|---|
+| `/revive` | locale('cmd_revive_help') | `server/server.lua` |
+
+### Locales
+
+Language files in `locales/`: `de`, `el`, `en`, `es`, `fr`, `ja`, `nl`, `pl`, `pt-br`, `ro`. Set the language with `setr rsg:locale "en"`.
+
+<!-- END AUTO-REFERENCE -->
