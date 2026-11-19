@@ -75,7 +75,7 @@ Everything is in `shared/config.lua`:
 
 All text, including the NUI, is in `locales/en.json` (UI strings use the `ui_` prefix). To add a language, copy it to `locales/<code>.json`, translate the values, and set `setr rsg:locale <code>`.
 
-Ships fully translated in en, de, el, es, fr, ja, nl, pl, pt-br and ro (every file has the same keys). Missing keys fall back to English.
+Ships fully translated in en, de, el, es, fr, ja, nl, pl, pt-br, ro and ru (every file has the same keys). Missing keys fall back to English.
 
 ## rsg-reputation integration
 
