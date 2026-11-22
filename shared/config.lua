@@ -69,7 +69,7 @@ Config.MaxBuyAmount = 50
 -- stash / boss menu
 ---------------------------------
 Config.Stash = { slots = 50, maxweight = 400000 }
-Config.BossMenuEvent = 'rsg-bossmenu:client:mainmenu' -- client event opened for boss grades; nil to hide
+Config.BossMenuEvent = 'rsg-society:client:openDesk' -- rsg-society client event opened for boss grades (receives the player's job name); nil to hide
 
 ---------------------------------
 -- blips

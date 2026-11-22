@@ -4,7 +4,7 @@ game 'rdr3'
 
 name 'rsg-medic'
 description 'Death system and medic job for RSG Framework'
-version '3.1.0'
+version '3.1.1'
 
 shared_scripts {
     '@rsg-core/shared/locale.lua',

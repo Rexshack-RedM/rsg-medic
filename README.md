@@ -1,6 +1,6 @@
 # rsg-medic
 
-**Version 3.1.0** · Full reference: [DOCS.md](DOCS.md)
+**Version 3.1.1** · Full reference: [DOCS.md](DOCS.md)
 
 Death system and doctor job for the RSG Framework (RedM), with a custom NUI in the RDR2 leather & gold theme.
 
@@ -39,7 +39,7 @@ Death system and doctor job for the RSG Framework (RedM), with a custom NUI in t
 
 - [rsg-core](https://github.com/Rexshack-RedM/rsg-core)
 - [rsg-inventory](https://github.com/Rexshack-RedM/rsg-inventory)
-- Optional: `rsg-bossmenu` for the management button
+- Optional: `rsg-society` for the management button
 
 ## Installation
 
@@ -62,7 +62,7 @@ Everything is in `shared/config.lua`:
 | `ActionDistance`, `FieldRange`, `FieldCommand` | Revive/treat range, field menu range and command |
 | `Revive`, `Treat`, `Bandage` | Durations, items and rewards |
 | `Supplies`, `MaxBuyAmount` | Items doctors can buy and the max per purchase |
-| `Stash`, `BossMenuEvent` | Medicine cabinet size and the boss menu client event |
+| `Stash`, `BossMenuEvent` | Medicine cabinet size and the rsg-society client event opened by the management button |
 | `AutoMedic` | NPC doctor: command, fee, cooldown, medic limit, models, distances, timings, blip |
 | `Locations` | Office prompt point and respawn position per doctor |
 

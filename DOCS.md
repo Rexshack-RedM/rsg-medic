@@ -1,6 +1,6 @@
 # rsg-medic — Developer & Server Owner Docs
 
-Version 3.1.0 · Dependencies: rsg-core, rsg-inventory (optional rsg-bossmenu)
+Version 3.1.1 · Dependencies: rsg-core, rsg-inventory (optional rsg-society)
 
 ## Contents
 1. Files
@@ -101,7 +101,7 @@ Support the Project : https://rexshack.tebex.store/
 
 ## Technical reference
 
-Generated from the source of **rsg-medic 3.1.0**. Names, arguments and defaults below are read straight from the code.
+Generated from the source of **rsg-medic 3.1.1**. Names, arguments and defaults below are read straight from the code.
 
 ### Dependencies
 
@@ -134,7 +134,7 @@ Generated from the source of **rsg-medic 3.1.0**. Names, arguments and defaults 
 | `Config.Supplies` | `table` |  |
 | `Config.MaxBuyAmount` | `50` |  |
 | `Config.Stash` | `{ slots = 50, maxweight = 400000 }` |  |
-| `Config.BossMenuEvent` | `'rsg-bossmenu:client:mainmenu'` | client event opened for boss grades; nil to hide |
+| `Config.BossMenuEvent` | `'rsg-society:client:openDesk'` | rsg-society client event opened for boss grades; receives the player's job name; nil to hide |
 | `Config.BlipSprite` | ``blip_shop_doctor`` |  |
 | `Config.AlertBlipSprite` | ``blip_ambient_companion`` |  |
 | `Config.Locations` | `table` |  |

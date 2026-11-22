@@ -423,7 +423,7 @@ end)
 RegisterNUICallback('boss', function(_, cb)
     cb('ok')
     SetNui(false)
-    if Config.BossMenuEvent then TriggerEvent(Config.BossMenuEvent) end
+    if Config.BossMenuEvent and PlayerJob and PlayerJob.name then TriggerEvent(Config.BossMenuEvent, PlayerJob.name) end
 end)
 
 RegisterNUICallback('refreshField', function(_, cb)
